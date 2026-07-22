@@ -41,6 +41,33 @@
 
       <div class="stats" id="stats"></div>
 
+      <section class="analytics-grid" aria-label="Game analytics">
+        <article class="panel analytics-panel">
+          <div class="section-heading">
+            <div><p class="eyebrow">PERFORMANCE</p><h2>Game results</h2></div>
+            <span id="analytics-sample" class="analytics-sample">No completed games yet</span>
+          </div>
+          <div id="result-metrics" class="metric-grid"></div>
+        </article>
+
+        <article class="panel analytics-panel">
+          <div class="section-heading"><div><p class="eyebrow">ACTIVITY</p><h2>Recent players</h2></div></div>
+          <div id="activity-metrics" class="metric-grid compact"></div>
+        </article>
+      </section>
+
+      <section class="analytics-grid analytics-details" aria-label="Question analytics">
+        <article class="panel analytics-panel">
+          <div class="section-heading"><div><p class="eyebrow">DROP-OFF</p><h2>Most failed questions</h2></div></div>
+          <div id="failure-chart" class="bar-list"><p class="muted">No failed games yet.</p></div>
+        </article>
+
+        <article class="panel analytics-panel">
+          <div class="section-heading"><div><p class="eyebrow">ANSWERS</p><h2>Most common choices</h2></div></div>
+          <div id="answer-insights" class="answer-list"><p class="muted">No answer data yet.</p></div>
+        </article>
+      </section>
+
       <section class="panel shared-link-panel">
         <div>
           <h2>One shared QR code</h2>
