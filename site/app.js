@@ -256,4 +256,30 @@ async function winnerFinal(returning=false){
   const spawn=t=>{if(!shoot&&Math.random()<.0018)shoot={x:Math.random()*w*.7,y:Math.random()*h*.35,len:80+Math.random()*100,life:0}};
   const draw=t=>{x.clearRect(0,0,w,h);for(const s of stars){s.y-=s.v;if(s.y<0)s.y=h;const p=.62+.38*Math.sin(t*.001+s.p);x.beginPath();x.arc(s.x,s.y,s.r*p,0,Math.PI*2);x.fillStyle=`rgba(225,230,255,${s.a*p})`;x.fill()}spawn(t);if(shoot){shoot.life+=.035;const a=Math.max(0,1-shoot.life);x.strokeStyle=`rgba(235,238,255,${a*.7})`;x.lineWidth=1;x.beginPath();x.moveTo(shoot.x,shoot.y);x.lineTo(shoot.x+shoot.len,shoot.y+shoot.len*.42);x.stroke();shoot.x+=5;shoot.y+=2.1;if(shoot.life>=1)shoot=null}requestAnimationFrame(draw)};addEventListener('resize',resize);resize();requestAnimationFrame(draw)
 })();
+
+// Keep the signature star centred exactly on the visible elliptical orbit.
+(()=>{
+  const ring=document.querySelector('.brand-orbit-ring');
+  const star=document.querySelector('.brand-orbit-star');
+  if(!ring||!star)return;
+  let angle=-Math.PI*.18;
+  let previous=performance.now();
+  const frame=now=>{
+    const elapsed=Math.min(64,now-previous);
+    previous=now;
+    if(!document.body.classList.contains('game-over')){
+      const duration=document.body.classList.contains('finale')?4500:10000;
+      angle+=(elapsed/duration)*Math.PI*2;
+    }
+    const width=ring.clientWidth;
+    const height=ring.clientHeight;
+    const rx=Math.max(0,width/2-1);
+    const ry=Math.max(0,height/2-1);
+    star.style.left=`${width/2+Math.cos(angle)*rx}px`;
+    star.style.top=`${height/2+Math.sin(angle)*ry}px`;
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+})();
+
 initializeGame();
