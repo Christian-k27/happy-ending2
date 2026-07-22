@@ -19,9 +19,19 @@
 
   <header class="topbar">
     <div class="brand-orbit" aria-label="Happy Ending">
-      <div class="brand-orbit-ring" aria-hidden="true">
-        <span class="brand-orbit-star">✦</span>
-      </div>
+      <svg class="brand-orbit-svg" viewBox="0 0 142 54" aria-hidden="true">
+        <defs>
+          <linearGradient id="orbitGradient" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#8fa8ff" stop-opacity=".20"/>
+            <stop offset="52%" stop-color="#d39cff" stop-opacity=".24"/>
+            <stop offset="100%" stop-color="#f0d2ff" stop-opacity=".14"/>
+          </linearGradient>
+        </defs>
+        <g transform="rotate(-11 71 27)">
+          <ellipse id="brand-orbit-path" class="brand-orbit-path" cx="71" cy="27" rx="68" ry="22"/>
+          <text id="brand-orbit-star" class="brand-orbit-star" x="0" y="0" text-anchor="middle" dominant-baseline="central">✦</text>
+        </g>
+      </svg>
       <span class="brand-orbit-text">HAPPY ENDING</span>
     </div>
     <button id="sound-toggle" class="sound-toggle" type="button" aria-pressed="false">Sound off</button>
