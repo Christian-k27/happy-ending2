@@ -105,18 +105,43 @@ async function loadPlayers(){
   $('#players').innerHTML=players.map(p=>{
     const attempt=Array.isArray(p.attempts)?p.attempts[0]:p.attempts;
     const detail=attempt?.winning_path||attempt?.losing_question||'—';
-    return `<tr><td><span class="badge ${p.status}">${escapeHtml(p.status)}</span></td><td>${escapeHtml(p.player_name||'—')}</td><td>${formatDate(p.started_at||p.created_at)}</td><td>${formatDate(p.completed_at)}</td><td>${escapeHtml(detail)}${attempt?.duration_seconds!=null?`<div class="tiny">${attempt.duration_seconds}s</div>`:''}</td><td><span title="${escapeHtml(p.token)}">${escapeHtml(shortBrowserId(p.token))}</span></td><td><button class="secondary reset" data-id="${p.id}">Reset</button></td></tr>`;
+    return `<tr><td><span class="badge ${p.status}">${escapeHtml(p.status)}</span></td><td>${escapeHtml(p.player_name||'—')}</td><td>${formatDate(p.started_at||p.created_at)}</td><td>${formatDate(p.completed_at)}</td><td>${escapeHtml(detail)}${attempt?.duration_seconds!=null?`<div class="tiny">${attempt.duration_seconds}s</div>`:''}</td><td><span title="${escapeHtml(p.token)}">${escapeHtml(shortBrowserId(p.token))}</span></td><td><button class="secondary reset" data-id="${p.id}" data-name="${escapeHtml(p.player_name||shortBrowserId(p.token)||'this player')}">Reset player</button></td></tr>`;
   }).join('')||'<tr><td colspan="7">No shared-link players yet.</td></tr>';
   document.querySelectorAll('.reset').forEach(b=>b.onclick=async()=>{
-    if(!confirm('Reset this browser and delete its recorded attempt?'))return;
+    const playerName=b.dataset.name||'this player';
+    if(!confirm(`Reset ${playerName}? They will be able to play again on the same browser.`))return;
     b.disabled=true;
     const {error}=await supabase.rpc('reset_player',{p_player_id:b.dataset.id});
-    if(error)alert(error.message);
+    if(error){
+      alert(error.message);
+      b.disabled=false;
+      return;
+    }
     await loadPlayers();
   });
 }
 
 $('#refresh').onclick=loadPlayers;
+
+$('#reset-all-players').onclick=async()=>{
+  const typed=prompt('This will reset every shared-QR player and allow everyone to play again. Type RESET ALL to continue.');
+  if(typed!=='RESET ALL')return;
+  const button=$('#reset-all-players');
+  const message=$('#reset-all-message');
+  button.disabled=true;
+  message.textContent='Resetting all players…';
+  const {data,error}=await supabase.rpc('reset_all_shared_players');
+  if(error){
+    message.classList.remove('success');
+    message.textContent=error.message;
+    button.disabled=false;
+    return;
+  }
+  message.classList.add('success');
+  message.textContent=`Reset complete. ${Number(data||0)} player(s) can play again.`;
+  button.disabled=false;
+  await loadPlayers();
+};
 
 async function loadSettings(){
   const {data,error}=await supabase.from('game_settings').select('*').eq('id',1).single();
