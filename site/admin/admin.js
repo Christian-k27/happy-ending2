@@ -1,28 +1,37 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
 const cfg = window.HAPPY_ENDING_CONFIG || {};
-const supabase = createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+const supabase = createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {
+  auth: { detectSessionInUrl: true, persistSession: true }
+});
 const $ = selector => document.querySelector(selector);
-const loginPanel=$('#login-panel'), dashboard=$('#dashboard'), loginMessage=$('#login-message');
+const loginPanel=$('#login-panel'), resetPanel=$('#reset-panel'), dashboard=$('#dashboard');
+const loginMessage=$('#login-message'), resetMessage=$('#reset-message');
+let recoveryMode = /type=recovery|access_token=|code=/.test(`${location.search}${location.hash}`);
 
 function baseGameUrl(){
   const url = new URL('../', location.href);
   url.hash=''; url.search='';
   return url.toString();
 }
-function showLoggedIn(loggedIn){
-  loginPanel.classList.toggle('hidden',loggedIn);
-  dashboard.classList.toggle('hidden',!loggedIn);
+function showView(view){
+  loginPanel.classList.toggle('hidden',view!=='login');
+  resetPanel.classList.toggle('hidden',view!=='reset');
+  dashboard.classList.toggle('hidden',view!=='dashboard');
+}
+function cleanRecoveryUrl(){
+  history.replaceState({},document.title,location.pathname);
 }
 function formatDate(value){return value ? new Intl.DateTimeFormat(undefined,{dateStyle:'medium',timeStyle:'short'}).format(new Date(value)) : '—'}
 function escapeHtml(value=''){return String(value).replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]))}
 
 async function verifyAdmin(){
+  if(recoveryMode){showView('reset');return false}
   const {data:{session}}=await supabase.auth.getSession();
-  if(!session){showLoggedIn(false);return false}
+  if(!session){showView('login');return false}
   const {data,error}=await supabase.from('admin_users').select('user_id').eq('user_id',session.user.id).maybeSingle();
-  if(error||!data){await supabase.auth.signOut();showLoggedIn(false);loginMessage.textContent='This account is not an administrator.';return false}
-  showLoggedIn(true);await Promise.all([loadPlayers(),loadSettings()]);return true;
+  if(error||!data){await supabase.auth.signOut();showView('login');loginMessage.textContent='This account is not an administrator.';return false}
+  showView('dashboard');await Promise.all([loadPlayers(),loadSettings()]);return true;
 }
 
 $('#login-form').addEventListener('submit',async e=>{
@@ -31,7 +40,31 @@ $('#login-form').addEventListener('submit',async e=>{
   if(error){loginMessage.textContent=error.message;return}
   loginMessage.textContent='';await verifyAdmin();
 });
-$('#sign-out').onclick=async()=>{await supabase.auth.signOut();showLoggedIn(false)};
+
+$('#forgot-password').onclick=async()=>{
+  const email=$('#email').value.trim();
+  if(!email){loginMessage.textContent='Enter your email address first.';$('#email').focus();return}
+  loginMessage.textContent='Sending recovery email…';
+  const redirectTo=`${location.origin}/admin/`;
+  const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo});
+  loginMessage.textContent=error?error.message:'Recovery email sent. Open the newest message in your inbox.';
+};
+
+$('#reset-form').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const password=$('#new-password').value;
+  const confirmation=$('#confirm-password').value;
+  if(password.length<8){resetMessage.textContent='Use at least 8 characters.';return}
+  if(password!==confirmation){resetMessage.textContent='The passwords do not match.';return}
+  resetMessage.textContent='Saving…';
+  const {error}=await supabase.auth.updateUser({password});
+  if(error){resetMessage.textContent=error.message;return}
+  resetMessage.textContent='Password changed successfully.';
+  recoveryMode=false;cleanRecoveryUrl();
+  setTimeout(()=>verifyAdmin(),650);
+});
+
+$('#sign-out').onclick=async()=>{await supabase.auth.signOut();showView('login')};
 
 async function loadPlayers(){
   const {data:players,error}=await supabase.from('players').select('id,token,status,player_name,started_at,completed_at,created_at,attempts(result,winning_path,losing_question,duration_seconds)').order('created_at',{ascending:false});
@@ -69,5 +102,15 @@ $('#save-settings').onclick=async()=>{
   message.textContent=error?error.message:'Saved.';
 };
 
-supabase.auth.onAuthStateChange(()=>verifyAdmin());
-verifyAdmin();
+supabase.auth.onAuthStateChange((event)=>{
+  if(event==='PASSWORD_RECOVERY'){
+    recoveryMode=true;showView('reset');
+  }else if(event==='SIGNED_OUT'){
+    recoveryMode=false;showView('login');
+  }else if(!recoveryMode){
+    setTimeout(()=>verifyAdmin(),0);
+  }
+});
+
+if(recoveryMode) showView('reset');
+else verifyAdmin();
