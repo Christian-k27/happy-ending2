@@ -14,7 +14,11 @@ button,input{font:inherit}
 .vignette{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(circle at 50% 45%,transparent 25%,rgba(0,0,0,.16) 65%,rgba(0,0,0,.68) 100%)}
 .grain{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.035;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 .topbar{position:fixed;z-index:20;inset:max(14px,env(safe-area-inset-top)) 16px auto;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
-.cosmic-mark{width:42px;height:42px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.16);border-radius:50%;background:rgba(5,8,20,.42);backdrop-filter:blur(18px);box-shadow:0 0 38px rgba(146,157,255,.2);font-size:19px;animation:mark 5s ease-in-out infinite}
+.brand-orbit{position:relative;width:142px;height:54px;display:grid;place-items:center;pointer-events:none;filter:drop-shadow(0 0 20px rgba(154,164,255,.12))}
+.brand-orbit-text{position:relative;z-index:2;font-size:10px;font-weight:700;letter-spacing:.19em;white-space:nowrap;background:linear-gradient(90deg,#e8edff 0%,#aab8ff 34%,#d6a5ff 70%,#f3d4ff 100%);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 24px rgba(178,187,255,.13)}
+.brand-orbit-ring{position:absolute;inset:5px 2px;border:1px solid rgba(216,222,255,.15);border-radius:50%;transform:rotate(-11deg);background:radial-gradient(ellipse at center,rgba(5,8,20,.16),rgba(5,8,20,.02) 65%,transparent 70%);backdrop-filter:blur(2px)}
+.brand-orbit-ring::after{content:"";position:absolute;inset:-1px;border-radius:inherit;background:linear-gradient(90deg,transparent 3%,rgba(150,169,255,.2) 28%,rgba(215,154,255,.2) 67%,transparent 96%);mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;-webkit-mask-composite:xor;padding:1px;opacity:.7}
+.brand-orbit-star{position:absolute;left:50%;top:50%;width:18px;height:18px;margin:-9px;display:grid;place-items:center;font-size:14px;color:#e9ddff;text-shadow:0 0 8px #9eb6ff,0 0 17px rgba(206,151,255,.8);animation:orbitStar 10s linear infinite;will-change:transform}
 .sound-toggle{pointer-events:auto;border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:9px 13px;background:rgba(5,8,20,.45);backdrop-filter:blur(18px);color:var(--muted);font-size:11px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
 .app{position:fixed;z-index:5;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.22) transparent;padding:72px clamp(16px,4vw,56px) max(30px,env(safe-area-inset-bottom));display:flex;justify-content:center}
 .screen{width:min(100%,760px);min-height:calc(100svh - 102px);display:flex;flex-direction:column;justify-content:center;gap:24px;padding:24px 0;opacity:0;transform:translateY(16px) scale(.99);filter:blur(8px);animation:screenIn .58s var(--ease) forwards}
@@ -45,12 +49,12 @@ button,input{font:inherit}
 @keyframes screenIn{to{opacity:1;transform:none;filter:blur(0)}}
 @keyframes screenOut{to{opacity:0;transform:translateY(-10px) scale(.995);filter:blur(7px)}}
 @keyframes drift{to{transform:translate3d(8vw,6vh,0) scale(1.12)}}
-@keyframes mark{50%{transform:rotate(10deg) scale(1.05);box-shadow:0 0 50px rgba(162,172,255,.34)}}
+@keyframes orbitStar{from{transform:rotate(0deg) translateX(70px) rotate(0deg)}to{transform:rotate(360deg) translateX(70px) rotate(-360deg)}}
 @keyframes float{50%{transform:translateY(-7px)}}
 @keyframes flash{0%{opacity:0}25%{opacity:.85}100%{opacity:0}}
 @keyframes pulse{to{transform:scale(1.1);opacity:.72}}
 @keyframes cornerIn{to{opacity:.78}}
-@media(max-width:600px){.app{padding:64px 14px max(24px,env(safe-area-inset-bottom))}.screen{min-height:calc(100svh - 88px);gap:19px;padding:18px 0;justify-content:center}.choices{gap:8px}.choice{min-height:55px;padding:14px 48px 14px 16px;border-radius:15px}.question{max-width:12ch}.cosmic-mark{width:38px;height:38px}.title{font-size:clamp(42px,13vw,70px)}}
+@media(max-width:600px){.app{padding:64px 14px max(24px,env(safe-area-inset-bottom))}.screen{min-height:calc(100svh - 88px);gap:19px;padding:18px 0;justify-content:center}.choices{gap:8px}.choice{min-height:55px;padding:14px 48px 14px 16px;border-radius:15px}.question{max-width:12ch}.brand-orbit{width:122px;height:48px}.brand-orbit-text{font-size:9px;letter-spacing:.16em}.brand-orbit-star{animation-duration:11s}@keyframes orbitStar{from{transform:rotate(0deg) translateX(60px) rotate(0deg)}to{transform:rotate(360deg) translateX(60px) rotate(-360deg)}}.title{font-size:clamp(42px,13vw,70px)}}
 @media(max-height:700px){.screen{justify-content:flex-start;padding-top:22px}.question{font-size:clamp(30px,7vh,54px)}.choices{gap:7px}.choice{min-height:51px;padding-top:12px;padding-bottom:12px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 
@@ -59,3 +63,9 @@ body.finale #space{transform:scale(1.025);transition:transform 12s linear}
 body.finale .win-glow{animation-duration:6s}
 
 body.finale .win-glow{animation-duration:6s}
+
+/* Happy Ending signature states */
+body.finale .brand-orbit-star{animation-duration:4.5s;filter:brightness(1.25)}
+body.finale .brand-orbit-ring{border-color:rgba(220,224,255,.25);box-shadow:0 0 28px rgba(173,155,255,.13)}
+body.game-over .brand-orbit-star{animation-play-state:paused;opacity:.34;filter:grayscale(.25)}
+body.game-over .brand-orbit-ring,body.game-over .brand-orbit-text{opacity:.48;transition:opacity 1.2s ease}
