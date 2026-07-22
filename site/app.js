@@ -51,6 +51,7 @@ function getToken(){
 
 function alreadyLost(){
   document.body.classList.remove('finale');
+  document.body.classList.add('game-over');
   document.querySelectorAll('.corner-link,.win-glow').forEach(x=>x.remove());
   setScreen(`<div class="icon">✦</div><h1 class="title">You've already played.</h1><p class="subtitle">Some chances only come once.</p>`,'center');
 }
@@ -185,7 +186,7 @@ async function reaction(text,next,icon='✦'){
   await wait(Math.min(1500,Math.max(850,420+text.length*34)));
   transition(next);
 }
-function intro(){scene(['WAIT.',"This isn't for everyone.",'You might get offended.'],startScreen,{icon:'✦',pause:[1150,1350,1450]})}
+function intro(){document.body.classList.remove('game-over','finale');scene(['WAIT.',"This isn't for everyone.",'You might get offended.'],startScreen,{icon:'✦',pause:[1150,1350,1450]})}
 function startScreen(){setScreen(`<div class="icon">✦</div><h1 class="title">Dare to try?</h1><button class="primary" id="start">START</button><div class="footer-note">One chance. One wrong answer → Game Over.</div>`,'center');document.querySelector('#start').onclick=async()=>{if(locked)return;locked=true;const result=await consumePlay();if(result==='playing')transition(q1,true);else if(result==='winner')return returningWinner();else alreadyLost()}}
 function q1(){choices('Are you sure you belong here?',[{key:'q1',label:'Yes',reaction:"Let's see.",next:nameScreen},{key:'q1',label:'I hope so',reaction:"Let's see.",next:nameScreen},{key:'q1',label:"I'm not sure",reaction:"Let's see.",next:nameScreen}])}
 function nameScreen(){
@@ -211,6 +212,8 @@ function q13(){choices('What are you looking for?',[{key:'q13',label:'Fun',react
 function q15(){choices('Sooo...',[{key:'q15',label:"Let's have some fun together",reaction:"I knew you'd say that.",icon:'🔥',next:victory},{key:'q15',label:"Nah, I'm a scaredy-cat",gameOver:true}])}
 function q14(){choices('Sooo...',[{key:'q14',label:"Let's let our eyes decide",reaction:"They don't lie.",icon:'👁️',next:victory},{key:'q14',label:"Let's regret not trying",gameOver:true}])}
 async function gameOver(losingQuestion=state.currentQuestion){
+  document.body.classList.remove('finale');
+  document.body.classList.add('game-over');
   await completeGame('loser',null,losingQuestion);
   navigator.vibrate?.([80,35,120]);tone(90,.24,.055);
   const f=document.createElement('div');f.className='flash';document.body.appendChild(f);setTimeout(()=>f.remove(),420);
@@ -218,6 +221,7 @@ async function gameOver(losingQuestion=state.currentQuestion){
 }
 
 async function secretVictory(){
+  document.body.classList.remove('game-over');
   await completeGame('winner','lets_fuuuck',null);
   document.querySelectorAll('.win-glow').forEach(x=>x.remove());
   const glow=document.createElement('div');glow.className='win-glow';document.body.appendChild(glow);
@@ -225,12 +229,14 @@ async function secretVictory(){
 }
 
 async function victory(){
+  document.body.classList.remove('game-over');
   const path = state.answers.q13 === 'Sex' ? 'sex' : (state.answers.q15 ? 'fun' : (state.answers.q14 ? 'eyes' : 'normal'));
   await completeGame('winner',path,null);
   document.querySelectorAll('.win-glow').forEach(x=>x.remove());const glow=document.createElement('div');glow.className='win-glow';document.body.appendChild(glow);
   scene(['You really made it through...','Your Happy Ending is waiting for you...','Now the real game starts.'],winnerFinal,{icon:'✦',pause:[2500,3000,2500]});
 }
 async function winnerFinal(returning=false){
+  document.body.classList.remove('game-over');
   document.querySelectorAll('.corner-link').forEach(x=>x.remove());
   setScreen(`${returning?'<p class="eyebrow">Welcome back.</p>':''}<div class="icon">✦</div><h1 class="title">Come for me.</h1>`,'center');
   document.body.classList.add('finale');
