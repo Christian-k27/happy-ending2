@@ -3,3 +3,8 @@
 .text-button{display:block;margin:12px auto 0;padding:4px 0;background:transparent;color:#b9b7e8;border:0;text-decoration:underline;text-underline-offset:4px;font-weight:600}.text-button:hover{color:#fff}.message.success{color:#a7efbd}
 
 .shared-link-grid{display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:center}.qr-card{background:#fff;border-radius:18px;padding:14px;width:max-content;box-shadow:0 18px 50px rgba(0,0,0,.28)}#shared-qr{width:210px;height:210px}.shared-link-actions{min-width:0}.button-row{display:flex;flex-wrap:wrap;gap:10px}.button-link{display:inline-flex;align-items:center;justify-content:center;border-radius:12px;padding:12px 17px;font-weight:700;text-decoration:none}.button-link.secondary{background:transparent;color:#e5e4f4;border:1px solid rgba(255,255,255,.16)}@media(max-width:720px){.shared-link-grid{grid-template-columns:1fr}.qr-card{margin:auto}.button-row>*{flex:1 1 140px}}
+
+.danger-zone{display:flex;align-items:center;justify-content:space-between;gap:24px;border-color:rgba(255,104,119,.24);background:linear-gradient(135deg,rgba(58,17,27,.55),rgba(17,19,33,.86))}
+.danger-actions{min-width:220px;text-align:right}.danger-button{background:#8f2839;color:#fff;border:1px solid rgba(255,255,255,.12)}
+.danger-button:hover{background:#a73044}.danger-zone .message{margin:10px 0 0}
+@media(max-width:720px){.danger-zone{display:block}.danger-actions{text-align:left;min-width:0}.danger-button{width:100%}}
