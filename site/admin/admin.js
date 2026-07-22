@@ -94,11 +94,74 @@ $('#download-qr').onclick=()=>{
   link.href=href;link.download='happy-ending-shared-qr.png';link.click();
 };
 
+const QUESTION_LABELS={
+  q1:'Belong here?',q3:"What'll you choose?",q4:'Good girl or bad girl?',q5:'A little dangerous?',
+  height:'Height',weight:'Weight',q8:'Dance floor',q9:'Attention',q10:'Orientation',q12:'Day together',
+  q13:'First move',q14:'Risk level',q15:'Final choice'
+};
+function formatDuration(seconds){
+  if(seconds==null||!Number.isFinite(Number(seconds)))return '—';
+  const value=Math.max(0,Math.round(Number(seconds)));
+  const minutes=Math.floor(value/60),rest=value%60;
+  return minutes?`${minutes}m ${rest}s`:`${rest}s`;
+}
+function percentage(part,total){return total?`${Math.round(part/total*100)}%`:'0%'}
+function startOfDay(date){const d=new Date(date);d.setHours(0,0,0,0);return d}
+function countSince(players,days){
+  const cutoff=startOfDay(new Date());cutoff.setDate(cutoff.getDate()-(days-1));
+  return players.filter(p=>new Date(p.created_at)>=cutoff).length;
+}
+function flattenAttempts(players){
+  return players.flatMap(player=>{
+    const attempts=Array.isArray(player.attempts)?player.attempts:(player.attempts?[player.attempts]:[]);
+    return attempts.map(attempt=>({...attempt,playerCreatedAt:player.created_at,playerStartedAt:player.started_at}));
+  });
+}
+function renderAnalytics(players){
+  const attempts=flattenAttempts(players);
+  const completed=attempts.filter(a=>a.result==='winner'||a.result==='loser');
+  const winners=completed.filter(a=>a.result==='winner');
+  const losers=completed.filter(a=>a.result==='loser');
+  const durations=completed.map(a=>Number(a.duration_seconds)).filter(Number.isFinite);
+  const average=durations.length?durations.reduce((a,b)=>a+b,0)/durations.length:null;
+  const started=players.filter(p=>p.started_at||['playing','winner','loser'].includes(p.status)).length;
+  $('#analytics-sample').textContent=completed.length?`${completed.length} completed game${completed.length===1?'':'s'}`:'No completed games yet';
+  $('#result-metrics').innerHTML=[
+    ['Unique visitors',players.length,''],['Started',started,''],['Win rate',percentage(winners.length,completed.length),'positive'],
+    ['Average time',formatDuration(average),''],['Winners',winners.length,'positive'],['Game Over',losers.length,'negative'],
+    ['Completion rate',percentage(completed.length,started),''],['In progress',players.filter(p=>p.status==='playing').length,'']
+  ].map(([label,value,klass])=>`<div class="metric"><span>${label}</span><strong class="${klass}">${value}</strong></div>`).join('');
+  $('#activity-metrics').innerHTML=[['Today',countSince(players,1)],['7 days',countSince(players,7)],['30 days',countSince(players,30)]].map(([l,n])=>`<div class="metric"><span>${l}</span><strong>${n}</strong></div>`).join('');
+
+  const failures={};
+  losers.forEach(a=>{const label=(a.losing_question||'Unknown question').trim();failures[label]=(failures[label]||0)+1});
+  const failureRows=Object.entries(failures).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const maxFailure=failureRows[0]?.[1]||1;
+  $('#failure-chart').innerHTML=failureRows.length?failureRows.map(([label,count])=>`<div class="bar-row"><div class="bar-label"><span title="${escapeHtml(label)}">${escapeHtml(label)}</span><strong>${count} · ${percentage(count,losers.length)}</strong></div><div class="bar-track"><div class="bar-fill" style="width:${count/maxFailure*100}%"></div></div></div>`).join(''):'<p class="muted">No failed games yet.</p>';
+
+  const answerTotals={};
+  attempts.forEach(a=>{
+    const answers=a.answers&&typeof a.answers==='object'?a.answers:{};
+    Object.entries(answers).forEach(([key,value])=>{
+      if(value==null||value==='')return;
+      answerTotals[key]??={total:0,choices:{}};
+      answerTotals[key].total++;
+      const choice=String(value);answerTotals[key].choices[choice]=(answerTotals[key].choices[choice]||0)+1;
+    });
+  });
+  const answerGroups=Object.entries(answerTotals).filter(([,v])=>Object.keys(v.choices).length>1).sort((a,b)=>b[1].total-a[1].total).slice(0,5);
+  $('#answer-insights').innerHTML=answerGroups.length?answerGroups.map(([key,data])=>{
+    const choices=Object.entries(data.choices).sort((a,b)=>b[1]-a[1]).slice(0,4);
+    return `<div class="answer-card"><div class="answer-question">${escapeHtml(QUESTION_LABELS[key]||key)}</div>${choices.map(([choice,count])=>`<div class="answer-choice"><span class="answer-choice-name" title="${escapeHtml(choice)}">${escapeHtml(choice)}</span><span class="answer-choice-value">${count} · ${percentage(count,data.total)}</span><div class="answer-mini-track"><div class="answer-mini-fill" style="width:${count/data.total*100}%"></div></div></div>`).join('')}</div>`;
+  }).join(''):'<p class="muted">No answer data yet.</p>';
+}
+
 async function loadPlayers(){
-  const {data,error}=await supabase.from('players').select('id,token,status,player_name,started_at,completed_at,created_at,attempts(result,winning_path,losing_question,duration_seconds)').order('created_at',{ascending:false});
+  const {data,error}=await supabase.from('players').select('id,token,status,player_name,started_at,completed_at,created_at,attempts(result,winning_path,losing_question,duration_seconds,answers,created_at)').order('created_at',{ascending:false});
   if(error){console.error(error);return}
   // Ignore legacy pre-generated QR tokens. Shared-QR browser identities are long hexadecimal values.
   const players=(data||[]).filter(p=>SHARED_TOKEN_PATTERN.test(p.token||''));
+  renderAnalytics(players);
   const counts={all:players.length,playing:0,winner:0,loser:0};
   players.forEach(p=>{if(counts[p.status]!==undefined)counts[p.status]++});
   $('#stats').innerHTML=[['Total players',counts.all],['In progress',counts.playing],['Winners',counts.winner],['Losers',counts.loser]].map(([l,n])=>`<div class="stat"><span class="muted">${l}</span><strong>${n}</strong></div>`).join('');
@@ -121,7 +184,7 @@ async function loadPlayers(){
   });
 }
 
-$('#refresh').onclick=loadPlayers;
+$('#refresh').onclick=async()=>{const button=$('#refresh');button.disabled=true;await loadPlayers();button.disabled=false};
 
 $('#reset-all-players').onclick=async()=>{
   const typed=prompt('This will reset every shared-QR player and allow everyone to play again. Type RESET ALL to continue.');
