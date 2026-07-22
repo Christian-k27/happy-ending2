@@ -11,7 +11,7 @@
     <section id="login-panel" class="panel narrow">
       <p class="eyebrow">HAPPY ENDING</p>
       <h1>Private admin</h1>
-      <p class="muted">Sign in with the administrator account created in Supabase.</p>
+      <p class="muted">Sign in with your administrator account.</p>
       <form id="login-form">
         <label>Email<input id="email" type="email" autocomplete="username" required></label>
         <label>Password<input id="password" type="password" autocomplete="current-password" required></label>
@@ -41,17 +41,23 @@
 
       <div class="stats" id="stats"></div>
 
-      <section class="panel controls">
+      <section class="panel shared-link-panel">
         <div>
-          <h2>Create QR links</h2>
-          <p class="muted">Create unique one-time tokens. Each token can start the game only once.</p>
+          <h2>One shared QR code</h2>
+          <p class="muted">Everyone opens this same address. Each browser receives its own anonymous game identity.</p>
         </div>
-        <div class="inline">
-          <input id="token-count" type="number" min="1" max="500" value="10">
-          <button id="generate">Generate</button>
+        <div class="shared-link-grid">
+          <div class="qr-card"><div id="shared-qr" aria-label="Shared game QR code"></div></div>
+          <div class="shared-link-actions">
+            <label>Shared game URL<input id="shared-game-url" type="url" readonly></label>
+            <div class="button-row">
+              <button id="copy-shared-link">Copy link</button>
+              <button id="download-qr" class="secondary">Download QR</button>
+              <a id="open-game" class="button-link secondary" target="_blank" rel="noopener">Open game</a>
+            </div>
+            <p id="shared-link-message" class="message success"></p>
+          </div>
         </div>
-        <textarea id="generated-links" rows="5" readonly placeholder="Generated links will appear here"></textarea>
-        <button id="copy-links" class="secondary">Copy links</button>
       </section>
 
       <section class="panel controls">
@@ -67,10 +73,10 @@
       </section>
 
       <section class="panel table-panel">
-        <div class="table-head"><div><h2>Players</h2><p class="muted">Reset is intended for testing or an intentional second chance.</p></div><button id="refresh" class="secondary">Refresh</button></div>
+        <div class="table-head"><div><h2>Players</h2><p class="muted">One row represents one browser that opened the shared QR link.</p></div><button id="refresh" class="secondary">Refresh</button></div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Status</th><th>Name</th><th>Started</th><th>Completed</th><th>Path / loss</th><th>Link</th><th></th></tr></thead>
+            <thead><tr><th>Status</th><th>Name</th><th>Started</th><th>Completed</th><th>Path / loss</th><th>Browser ID</th><th></th></tr></thead>
             <tbody id="players"></tbody>
           </table>
         </div>
@@ -79,6 +85,7 @@
   </main>
 
   <script src="../config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script type="module" src="admin.js"></script>
 </body>
 </html>
