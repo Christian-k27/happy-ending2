@@ -17,7 +17,20 @@
         <label>Password<input id="password" type="password" autocomplete="current-password" required></label>
         <button type="submit">Sign in</button>
       </form>
+      <button id="forgot-password" class="text-button" type="button">Forgot password?</button>
       <p id="login-message" class="message"></p>
+    </section>
+
+    <section id="reset-panel" class="panel narrow hidden">
+      <p class="eyebrow">HAPPY ENDING</p>
+      <h1>Choose a new password</h1>
+      <p class="muted">Use at least 8 characters. This recovery link can be used only once.</p>
+      <form id="reset-form">
+        <label>New password<input id="new-password" type="password" autocomplete="new-password" minlength="8" required></label>
+        <label>Confirm password<input id="confirm-password" type="password" autocomplete="new-password" minlength="8" required></label>
+        <button type="submit">Save new password</button>
+      </form>
+      <p id="reset-message" class="message"></p>
     </section>
 
     <section id="dashboard" class="hidden">
