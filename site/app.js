@@ -257,6 +257,66 @@ async function winnerFinal(returning=false){
   const draw=t=>{x.clearRect(0,0,w,h);for(const s of stars){s.y-=s.v;if(s.y<0)s.y=h;const p=.62+.38*Math.sin(t*.001+s.p);x.beginPath();x.arc(s.x,s.y,s.r*p,0,Math.PI*2);x.fillStyle=`rgba(225,230,255,${s.a*p})`;x.fill()}spawn(t);if(shoot){shoot.life+=.035;const a=Math.max(0,1-shoot.life);x.strokeStyle=`rgba(235,238,255,${a*.7})`;x.lineWidth=1;x.beginPath();x.moveTo(shoot.x,shoot.y);x.lineTo(shoot.x+shoot.len,shoot.y+shoot.len*.42);x.stroke();shoot.x+=5;shoot.y+=2.1;if(shoot.life>=1)shoot=null}requestAnimationFrame(draw)};addEventListener('resize',resize);resize();requestAnimationFrame(draw)
 })();
 
+// Move the signature star along the exact same SVG ellipse that is visible.
+(()=>{
+  const path=document.querySelector('#brand-orbit-path');
+  const star=document.querySelector('#brand-orbit-star');
+  if(!path||!star)return;
+
+  const total=path.getTotalLength();
+  let distance=total*.82;
+  let previous=performance.now();
+
+  const frame=now=>{
+    const elapsed=Math.min(64,now-previous);
+    previous=now;
+
+    if(!document.body.classList.contains('game-over')){
+      // About eight seconds per orbit: calm, but still visibly alive.
+      const duration=document.body.classList.contains('finale')?5200:8000;
+      distance=(distance+(elapsed/duration)*total)%total;
+    }
+
+    const point=path.getPointAtLength(distance);
+    star.setAttribute('x',point.x);
+    star.setAttribute('y',point.y);
+    requestAnimationFrame(frame);
+  };
+
+  requestAnimationFrame(frame);
+})();
+
+initializeGame();
+
+async function victory(){
+  document.body.classList.remove('game-over');
+  const path = state.answers.q13 === 'Sex' ? 'sex' : (state.answers.q15 ? 'fun' : (state.answers.q14 ? 'eyes' : 'normal'));
+  await completeGame('winner',path,null);
+  document.querySelectorAll('.win-glow').forEach(x=>x.remove());const glow=document.createElement('div');glow.className='win-glow';document.body.appendChild(glow);
+  scene(['You really made it through...','Your Happy Ending is waiting for you...','Now the real game starts.'],winnerFinal,{icon:'✦',pause:[2500,3000,2500]});
+}
+async function winnerFinal(returning=false){
+  document.body.classList.remove('game-over');
+  document.querySelectorAll('.corner-link').forEach(x=>x.remove());
+  setScreen(`${returning?'<p class="eyebrow">Welcome back.</p>':''}<div class="icon">✦</div><h1 class="title">Come for me.</h1>`,'center');
+  document.body.classList.add('finale');
+  await wait(returning ? 900 : 6500);
+  if(!returning) navigator.vibrate?.(70);
+  const a=document.createElement('a');
+  a.className='corner-link';
+  a.textContent=state.winnerLinkText||"Can't find me? ↗";
+  a.href=state.winnerUrl||cfg.instagramUrl||'#';
+  a.target='_blank';
+  a.rel='noopener';
+  document.body.appendChild(a);
+}
+(()=>{
+  const c=document.querySelector('#space'),x=c.getContext('2d');let w,h,dpr,stars=[],shoot=null;
+  const resize=()=>{dpr=Math.min(devicePixelRatio||1,2);w=innerWidth;h=innerHeight;c.width=w*dpr;c.height=h*dpr;c.style.width=w+'px';c.style.height=h+'px';x.setTransform(dpr,0,0,dpr,0,0);stars=Array.from({length:Math.min(125,Math.floor(w*h/9000))},()=>({x:Math.random()*w,y:Math.random()*h,r:Math.random()*1.3+.25,a:Math.random()*.65+.18,p:Math.random()*6.28,v:Math.random()*.045+.012}))};
+  const spawn=t=>{if(!shoot&&Math.random()<.0018)shoot={x:Math.random()*w*.7,y:Math.random()*h*.35,len:80+Math.random()*100,life:0}};
+  const draw=t=>{x.clearRect(0,0,w,h);for(const s of stars){s.y-=s.v;if(s.y<0)s.y=h;const p=.62+.38*Math.sin(t*.001+s.p);x.beginPath();x.arc(s.x,s.y,s.r*p,0,Math.PI*2);x.fillStyle=`rgba(225,230,255,${s.a*p})`;x.fill()}spawn(t);if(shoot){shoot.life+=.035;const a=Math.max(0,1-shoot.life);x.strokeStyle=`rgba(235,238,255,${a*.7})`;x.lineWidth=1;x.beginPath();x.moveTo(shoot.x,shoot.y);x.lineTo(shoot.x+shoot.len,shoot.y+shoot.len*.42);x.stroke();shoot.x+=5;shoot.y+=2.1;if(shoot.life>=1)shoot=null}requestAnimationFrame(draw)};addEventListener('resize',resize);resize();requestAnimationFrame(draw)
+})();
+
 // Keep the signature star centred exactly on the visible elliptical orbit.
 (()=>{
   const ring=document.querySelector('.brand-orbit-ring');
