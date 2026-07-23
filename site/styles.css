@@ -68,3 +68,17 @@ body.finale .brand-orbit-star{filter:brightness(1.25)}
 body.finale .brand-orbit-ring{border-color:rgba(220,224,255,.25);box-shadow:0 0 28px rgba(173,155,255,.13)}
 body.game-over .brand-orbit-star{opacity:.34;filter:grayscale(.25)}
 body.game-over .brand-orbit-ring,body.game-over .brand-orbit-text{opacity:.48;transition:opacity 1.2s ease}
+
+/* Final story beat: the orbiting star leaves its path and becomes the last line. */
+.final-stage{min-height:clamp(150px,28vh,260px);display:grid;place-items:center;position:relative;width:100%}
+.final-message{opacity:0;filter:blur(16px);transform:translateY(10px) scale(.96);background:linear-gradient(90deg,#f4f6ff 5%,#aebeff 46%,#d9a7ff 76%,#f8e7ff 100%);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 38px rgba(184,174,255,.16)}
+.final-message.is-visible{animation:finalMessageIn 1.15s cubic-bezier(.18,.8,.2,1) forwards}
+.final-flying-star{position:fixed;z-index:80;pointer-events:none;color:#f2edff;font-size:18px;line-height:1;filter:drop-shadow(0 0 5px #9eb6ff) drop-shadow(0 0 13px rgba(197,137,255,.95)) drop-shadow(0 0 28px rgba(116,183,255,.55));will-change:transform,opacity}
+.final-particles{position:fixed;inset:0;z-index:79;pointer-events:none}
+.final-particle{position:fixed;width:var(--size);height:var(--size);border-radius:50%;background:linear-gradient(135deg,#f5f0ff,#aebcff 48%,#d69cff);box-shadow:0 0 8px rgba(171,187,255,.9),0 0 16px rgba(205,145,255,.42);will-change:transform,opacity}
+body.finale-sequence .brand-orbit-path{opacity:.45;transition:opacity 1s ease}
+body.finale-sequence .brand-orbit-text{opacity:.58;transition:opacity 1s ease}
+body.finale-complete .brand-orbit-star{opacity:0!important}
+body.finale-complete .brand-orbit-path,body.finale-complete .brand-orbit-text{opacity:.34;transition:opacity 1.2s ease}
+@keyframes finalMessageIn{0%{opacity:0;filter:blur(16px);transform:translateY(10px) scale(.96)}55%{opacity:1;filter:blur(2px);transform:translateY(0) scale(1.015)}100%{opacity:1;filter:blur(0);transform:none}}
+@media(prefers-reduced-motion:reduce){.final-message{opacity:1;filter:none;transform:none}.final-flying-star,.final-particles{display:none!important}}
