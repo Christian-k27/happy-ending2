@@ -69,16 +69,21 @@ body.finale .brand-orbit-ring{border-color:rgba(220,224,255,.25);box-shadow:0 0 
 body.game-over .brand-orbit-star{opacity:.34;filter:grayscale(.25)}
 body.game-over .brand-orbit-ring,body.game-over .brand-orbit-text{opacity:.48;transition:opacity 1.2s ease}
 
-/* Final story beat: the orbiting star leaves its path and becomes the last line. */
-.final-stage{min-height:clamp(150px,28vh,260px);display:grid;place-items:center;position:relative;width:100%}
-.final-message{opacity:0;filter:blur(16px);transform:translateY(10px) scale(.96);background:linear-gradient(90deg,#f4f6ff 5%,#aebeff 46%,#d9a7ff 76%,#f8e7ff 100%);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 38px rgba(184,174,255,.16)}
-.final-message.is-visible{animation:finalMessageIn 1.15s cubic-bezier(.18,.8,.2,1) forwards}
-.final-flying-star{position:fixed;z-index:80;pointer-events:none;color:#f2edff;font-size:18px;line-height:1;filter:drop-shadow(0 0 5px #9eb6ff) drop-shadow(0 0 13px rgba(197,137,255,.95)) drop-shadow(0 0 28px rgba(116,183,255,.55));will-change:transform,opacity}
-.final-particles{position:fixed;inset:0;z-index:79;pointer-events:none}
-.final-particle{position:fixed;width:var(--size);height:var(--size);border-radius:50%;background:linear-gradient(135deg,#f5f0ff,#aebcff 48%,#d69cff);box-shadow:0 0 8px rgba(171,187,255,.9),0 0 16px rgba(205,145,255,.42);will-change:transform,opacity}
-body.finale-sequence .brand-orbit-path{opacity:.45;transition:opacity 1s ease}
-body.finale-sequence .brand-orbit-text{opacity:.58;transition:opacity 1s ease}
-body.finale-complete .brand-orbit-star{opacity:0!important}
-body.finale-complete .brand-orbit-path,body.finale-complete .brand-orbit-text{opacity:.34;transition:opacity 1.2s ease}
-@keyframes finalMessageIn{0%{opacity:0;filter:blur(16px);transform:translateY(10px) scale(.96)}55%{opacity:1;filter:blur(2px);transform:translateY(0) scale(1.015)}100%{opacity:1;filter:blur(0);transform:none}}
-@media(prefers-reduced-motion:reduce){.final-message{opacity:1;filter:none;transform:none}.final-flying-star,.final-particles{display:none!important}}
+/* Final story beat: the orbit star leaves naturally and becomes the last words. */
+.finale-wordmark{display:flex;gap:.23em;align-items:baseline;justify-content:center;flex-wrap:wrap;font-size:clamp(44px,9vw,94px);line-height:.94;letter-spacing:-.065em;font-weight:650;opacity:0;filter:blur(10px);transform:translateY(7px) scale(.985);background:linear-gradient(90deg,#f5f7ff 0%,#aebdff 46%,#d7a4ff 76%,#f2dcff 100%);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 34px rgba(174,183,255,.14)}
+.finale-wordmark.is-visible{animation:finaleWordmarkIn 1s cubic-bezier(.18,.82,.2,1) forwards}
+.finale-flight-layer{position:fixed;inset:0;z-index:90;pointer-events:none;overflow:hidden}
+.finale-flying-star{position:fixed;color:#f5efff;font-size:16px;line-height:1;filter:drop-shadow(0 0 5px #a9bbff) drop-shadow(0 0 13px rgba(203,143,255,.9));will-change:left,top,transform,opacity}
+.finale-flying-star.is-dissolving{animation:finaleStarDissolve .48s ease-out forwards}
+.finale-trail-dot,.finale-letter-particle{position:fixed;width:3px;height:3px;border-radius:50%;background:linear-gradient(135deg,#f8f3ff,#aebfff 52%,#d6a0ff);box-shadow:0 0 7px rgba(174,190,255,.95),0 0 14px rgba(205,145,255,.45)}
+.finale-trail-dot{transform:translate(-50%,-50%);animation:finaleTrailFade .88s ease-out forwards}
+.finale-letter-particle{opacity:0;transform:translate(-50%,-50%) scale(.25);transition:transform .72s cubic-bezier(.18,.78,.2,1) var(--delay),opacity .3s ease var(--delay)}
+.finale-letter-particle.is-forming{opacity:.92;transform:translate(calc(-50% + var(--tx)),calc(-50% + var(--ty))) scale(1)}
+.finale-letter-particle.is-gone{opacity:0;transition:opacity .48s ease;}
+body.star-finale-running .brand-orbit-path,body.star-finale-running .brand-orbit-text{opacity:.52;transition:opacity 1s ease}
+body.star-finale-done .brand-orbit-star{opacity:0!important}
+body.star-finale-done .brand-orbit-path,body.star-finale-done .brand-orbit-text{opacity:.34;transition:opacity 1.2s ease}
+@keyframes finaleTrailFade{0%{opacity:.92;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(calc(-50% + var(--drift-x)),calc(-50% + var(--drift-y))) scale(.1)}}
+@keyframes finaleStarDissolve{0%{opacity:1;transform:translate(-50%,-50%) scale(.82)}100%{opacity:0;transform:translate(-50%,-50%) scale(2.2);filter:blur(5px)}}
+@keyframes finaleWordmarkIn{0%{opacity:0;filter:blur(10px);transform:translateY(7px) scale(.985)}58%{opacity:1;filter:blur(1.5px);transform:translateY(0) scale(1.01)}100%{opacity:1;filter:blur(0);transform:none}}
+@media(prefers-reduced-motion:reduce){.finale-wordmark{opacity:1;filter:none;transform:none}.finale-flight-layer{display:none!important}}
