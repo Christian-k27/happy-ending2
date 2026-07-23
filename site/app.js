@@ -236,17 +236,17 @@ async function victory(){
   scene(['You really made it through...','Your Happy Ending is waiting for you...','Now the real game starts.'],winnerFinal,{icon:'✦',pause:[2500,3000,2500]});
 }
 async function winnerFinal(returning=false){
-  document.body.classList.remove('game-over','finale-sequence','finale-complete');
-  document.querySelectorAll('.corner-link,.final-flying-star,.final-particles').forEach(x=>x.remove());
+  document.body.classList.remove('game-over','star-finale-running','star-finale-done');
+  document.querySelectorAll('.corner-link,.finale-flight-layer').forEach(x=>x.remove());
   document.body.classList.add('finale');
 
-  if(returning){
-    setScreen('<p class="eyebrow">Welcome back.</p><div class="icon">✦</div><h1 class="title">Come for me.</h1>','center');
+  if(returning || matchMedia('(prefers-reduced-motion: reduce)').matches){
+    setScreen(`${returning?'<p class="eyebrow">Welcome back.</p>':''}<div class="icon">✦</div><h1 class="title">Come for me.</h1>`,'center');
     await wait(900);
   }else{
-    setScreen('<div class="final-stage" aria-label="Final message"><h1 class="title final-message" id="final-message">Come for me.</h1></div>','center');
+    setScreen('<div class="finale-wordmark" aria-label="Come for me."><span>Come</span><span>for</span><span>me.</span></div>','center');
     await wait(650);
-    await playFinalStarSequence();
+    await playNaturalStarFinale();
     navigator.vibrate?.(70);
   }
 
@@ -259,72 +259,112 @@ async function winnerFinal(returning=false){
   document.body.appendChild(a);
 }
 
-async function playFinalStarSequence(){
-  const message=document.querySelector('#final-message');
+async function playNaturalStarFinale(){
+  const orbit=window.happyEndingOrbit;
   const source=document.querySelector('#brand-orbit-star');
-  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if(!message||!source||reduced){
-    message?.classList.add('is-visible');
-    document.body.classList.add('finale-complete');
+  const wordmark=document.querySelector('.finale-wordmark');
+  if(!orbit||!source||!wordmark){
+    wordmark?.classList.add('is-visible');
     return;
   }
 
-  document.body.classList.add('finale-sequence');
-  const sourceRect=source.getBoundingClientRect();
-  const startX=sourceRect.left+sourceRect.width/2;
-  const startY=sourceRect.top+sourceRect.height/2;
-  const targetX=innerWidth/2;
-  const targetY=innerHeight/2;
+  document.body.classList.add('star-finale-running');
 
-  const flying=document.createElement('div');
-  flying.className='final-flying-star';
-  flying.textContent='✦';
-  flying.style.left=`${startX}px`;
-  flying.style.top=`${startY}px`;
-  document.body.appendChild(flying);
+  // Keep the star on its real orbit while it gently loses speed.
+  await orbit.slowToStop(1050);
+  const launch=orbit.getScreenState();
   source.style.opacity='0';
-  tone(660,.18,.02);
 
-  const dx=targetX-startX,dy=targetY-startY;
-  const curveX=dx*.55;
-  const curveY=dy*.28-34;
-  await flying.animate([
-    {transform:'translate(-50%,-50%) scale(1)',opacity:1,offset:0},
-    {transform:`translate(calc(-50% + ${curveX}px),calc(-50% + ${curveY}px)) scale(1.12)`,opacity:1,offset:.58},
-    {transform:`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(.72)`,opacity:1,offset:1}
-  ],{duration:1450,easing:'cubic-bezier(.22,.72,.18,1)',fill:'forwards'}).finished;
+  const layer=document.createElement('div');
+  layer.className='finale-flight-layer';
+  document.body.appendChild(layer);
 
-  tone(880,.14,.022);
-  const particles=document.createElement('div');
-  particles.className='final-particles';
-  document.body.appendChild(particles);
-  const textRect=message.getBoundingClientRect();
-  const count=Math.min(74,Math.max(48,Math.round(textRect.width/7)));
-  const animations=[];
-  for(let i=0;i<count;i++){
+  const flying=document.createElement('span');
+  flying.className='finale-flying-star';
+  flying.textContent='✦';
+  flying.style.left=`${launch.x}px`;
+  flying.style.top=`${launch.y}px`;
+  layer.appendChild(flying);
+
+  const chars=[...wordmark.querySelectorAll('span')];
+  const wordRect=wordmark.getBoundingClientRect();
+  const target={x:wordRect.left+wordRect.width/2,y:wordRect.top+wordRect.height/2};
+  const dx=target.x-launch.x,dy=target.y-launch.y;
+  const distance=Math.hypot(dx,dy);
+  const tangentScale=Math.min(210,Math.max(105,distance*.34));
+  const c1={x:launch.x+launch.tx*tangentScale,y:launch.y+launch.ty*tangentScale};
+  const c2={x:target.x-dx*.18,y:target.y-dy*.18-22};
+  const flightMs=1500;
+  const start=performance.now();
+  let lastTrail=0;
+
+  const bezier=(a,b,c,d,t)=>{
+    const u=1-t;
+    return u*u*u*a+3*u*u*t*b+3*u*t*t*c+t*t*t*d;
+  };
+  const ease=t=>1-Math.pow(1-t,3);
+
+  await new Promise(resolve=>{
+    const frame=now=>{
+      const raw=Math.min(1,(now-start)/flightMs);
+      const t=ease(raw);
+      const x=bezier(launch.x,c1.x,c2.x,target.x,t);
+      const y=bezier(launch.y,c1.y,c2.y,target.y,t);
+      flying.style.left=`${x}px`;
+      flying.style.top=`${y}px`;
+      flying.style.transform=`translate(-50%,-50%) scale(${1-raw*.18})`;
+
+      if(now-lastTrail>42 && raw<.88){
+        lastTrail=now;
+        const dot=document.createElement('i');
+        dot.className='finale-trail-dot';
+        dot.style.left=`${x}px`;dot.style.top=`${y}px`;
+        dot.style.setProperty('--drift-x',`${(Math.random()-.5)*22}px`);
+        dot.style.setProperty('--drift-y',`${(Math.random()-.5)*22}px`);
+        layer.appendChild(dot);
+        setTimeout(()=>dot.remove(),900);
+      }
+
+      if(raw<1)requestAnimationFrame(frame);else resolve();
+    };
+    requestAnimationFrame(frame);
+  });
+
+  // The star dissolves; its light settles across the final words.
+  flying.classList.add('is-dissolving');
+  const targets=[];
+  chars.forEach(el=>{
+    const r=el.getBoundingClientRect();
+    const n=Math.max(12,Math.round(r.width/5));
+    for(let i=0;i<n;i++)targets.push({
+      x:r.left+Math.random()*r.width,
+      y:r.top+r.height*.18+Math.random()*r.height*.64
+    });
+  });
+
+  const particles=[];
+  targets.forEach((pt,i)=>{
     const dot=document.createElement('i');
-    dot.className='final-particle';
-    const tx=textRect.left+Math.random()*textRect.width-targetX;
-    const ty=textRect.top+Math.random()*textRect.height-targetY;
-    dot.style.left=`${targetX}px`;dot.style.top=`${targetY}px`;
-    dot.style.setProperty('--size',`${1.2+Math.random()*2.8}px`);
-    particles.appendChild(dot);
-    animations.push(dot.animate([
-      {transform:'translate(-50%,-50%) scale(.2)',opacity:0},
-      {transform:'translate(-50%,-50%) scale(1.5)',opacity:1,offset:.16},
-      {transform:`translate(calc(-50% + ${tx}px),calc(-50% + ${ty}px)) scale(1)`,opacity:.9,offset:.76},
-      {transform:`translate(calc(-50% + ${tx}px),calc(-50% + ${ty}px)) scale(.15)`,opacity:0}
-    ],{duration:1250+Math.random()*280,delay:Math.random()*160,easing:'cubic-bezier(.2,.7,.2,1)',fill:'forwards'}).finished);
-  }
-  flying.animate([{opacity:1,transform:`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(.72)`},{opacity:0,transform:`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(2.4)`}],{duration:360,easing:'ease-out',fill:'forwards'});
-  await wait(470);
-  message.classList.add('is-visible');
-  tone(520,.32,.018);
-  await Promise.allSettled(animations);
-  flying.remove();particles.remove();
-  document.body.classList.remove('finale-sequence');
-  document.body.classList.add('finale-complete');
-  await wait(1500);
+    dot.className='finale-letter-particle';
+    dot.style.left=`${target.x}px`;dot.style.top=`${target.y}px`;
+    dot.style.setProperty('--tx',`${pt.x-target.x}px`);
+    dot.style.setProperty('--ty',`${pt.y-target.y}px`);
+    dot.style.setProperty('--delay',`${(i%13)*10+Math.random()*80}ms`);
+    layer.appendChild(dot);particles.push(dot);
+  });
+
+  await wait(180);
+  particles.forEach(x=>x.classList.add('is-forming'));
+  await wait(720);
+  wordmark.classList.add('is-visible');
+  await wait(520);
+  particles.forEach(x=>x.classList.add('is-gone'));
+  await wait(520);
+
+  layer.remove();
+  document.body.classList.remove('star-finale-running');
+  document.body.classList.add('star-finale-done');
+  await wait(1100);
 }
 (()=>{
   const c=document.querySelector('#space'),x=c.getContext('2d');let w,h,dpr,stars=[],shoot=null;
@@ -342,15 +382,48 @@ async function playFinalStarSequence(){
   const total=path.getTotalLength();
   let distance=total*.82;
   let previous=performance.now();
+  let speed=1;
+  let stopping=null;
+
+  const screenPoint=length=>{
+    const p=path.getPointAtLength((length+total)%total);
+    const matrix=path.getScreenCTM();
+    const svgPoint=path.ownerSVGElement.createSVGPoint();
+    svgPoint.x=p.x;svgPoint.y=p.y;
+    return svgPoint.matrixTransform(matrix);
+  };
+
+  window.happyEndingOrbit={
+    getScreenState(){
+      const p=screenPoint(distance);
+      const before=screenPoint(distance-2.5);
+      const after=screenPoint(distance+2.5);
+      const len=Math.hypot(after.x-before.x,after.y-before.y)||1;
+      return {x:p.x,y:p.y,tx:(after.x-before.x)/len,ty:(after.y-before.y)/len};
+    },
+    slowToStop(duration=1000){
+      if(stopping)return stopping.promise;
+      const started=performance.now(),initial=speed;
+      let resolve;
+      const promise=new Promise(r=>resolve=r);
+      stopping={promise};
+      const step=now=>{
+        const t=Math.min(1,(now-started)/duration);
+        speed=initial*(1-(t*t*(3-2*t)));
+        if(t<1)requestAnimationFrame(step);else{speed=0;resolve();}
+      };
+      requestAnimationFrame(step);
+      return promise;
+    }
+  };
 
   const frame=now=>{
     const elapsed=Math.min(64,now-previous);
     previous=now;
 
     if(!document.body.classList.contains('game-over')){
-      // About eight seconds per orbit: calm, but still visibly alive.
-      const duration=document.body.classList.contains('finale')?5200:8000;
-      distance=(distance+(elapsed/duration)*total)%total;
+      const duration=document.body.classList.contains('finale')?6200:8000;
+      distance=(distance+(elapsed/duration)*total*speed)%total;
     }
 
     const point=path.getPointAtLength(distance);
