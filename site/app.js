@@ -236,12 +236,20 @@ async function victory(){
   scene(['You really made it through...','Your Happy Ending is waiting for you...','Now the real game starts.'],winnerFinal,{icon:'✦',pause:[2500,3000,2500]});
 }
 async function winnerFinal(returning=false){
-  document.body.classList.remove('game-over');
-  document.querySelectorAll('.corner-link').forEach(x=>x.remove());
-  setScreen(`${returning?'<p class="eyebrow">Welcome back.</p>':''}<div class="icon">✦</div><h1 class="title">Come for me.</h1>`,'center');
+  document.body.classList.remove('game-over','finale-sequence','finale-complete');
+  document.querySelectorAll('.corner-link,.final-flying-star,.final-particles').forEach(x=>x.remove());
   document.body.classList.add('finale');
-  await wait(returning ? 900 : 6500);
-  if(!returning) navigator.vibrate?.(70);
+
+  if(returning){
+    setScreen('<p class="eyebrow">Welcome back.</p><div class="icon">✦</div><h1 class="title">Come for me.</h1>','center');
+    await wait(900);
+  }else{
+    setScreen('<div class="final-stage" aria-label="Final message"><h1 class="title final-message" id="final-message">Come for me.</h1></div>','center');
+    await wait(650);
+    await playFinalStarSequence();
+    navigator.vibrate?.(70);
+  }
+
   const a=document.createElement('a');
   a.className='corner-link';
   a.textContent=state.winnerLinkText||"Can't find me? ↗";
@@ -249,6 +257,74 @@ async function winnerFinal(returning=false){
   a.target='_blank';
   a.rel='noopener';
   document.body.appendChild(a);
+}
+
+async function playFinalStarSequence(){
+  const message=document.querySelector('#final-message');
+  const source=document.querySelector('#brand-orbit-star');
+  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!message||!source||reduced){
+    message?.classList.add('is-visible');
+    document.body.classList.add('finale-complete');
+    return;
+  }
+
+  document.body.classList.add('finale-sequence');
+  const sourceRect=source.getBoundingClientRect();
+  const startX=sourceRect.left+sourceRect.width/2;
+  const startY=sourceRect.top+sourceRect.height/2;
+  const targetX=innerWidth/2;
+  const targetY=innerHeight/2;
+
+  const flying=document.createElement('div');
+  flying.className='final-flying-star';
+  flying.textContent='✦';
+  flying.style.left=`${startX}px`;
+  flying.style.top=`${startY}px`;
+  document.body.appendChild(flying);
+  source.style.opacity='0';
+  tone(660,.18,.02);
+
+  const dx=targetX-startX,dy=targetY-startY;
+  const curveX=dx*.55;
+  const curveY=dy*.28-34;
+  await flying.animate([
+    {transform:'translate(-50%,-50%) scale(1)',opacity:1,offset:0},
+    {transform:`translate(calc(-50% + ${curveX}px),calc(-50% + ${curveY}px)) scale(1.12)`,opacity:1,offset:.58},
+    {transform:`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(.72)`,opacity:1,offset:1}
+  ],{duration:1450,easing:'cubic-bezier(.22,.72,.18,1)',fill:'forwards'}).finished;
+
+  tone(880,.14,.022);
+  const particles=document.createElement('div');
+  particles.className='final-particles';
+  document.body.appendChild(particles);
+  const textRect=message.getBoundingClientRect();
+  const count=Math.min(74,Math.max(48,Math.round(textRect.width/7)));
+  const animations=[];
+  for(let i=0;i<count;i++){
+    const dot=document.createElement('i');
+    dot.className='final-particle';
+    const tx=textRect.left+Math.random()*textRect.width-targetX;
+    const ty=textRect.top+Math.random()*textRect.height-targetY;
+    dot.style.left=`${targetX}px`;dot.style.top=`${targetY}px`;
+    dot.style.setProperty('--size',`${1.2+Math.random()*2.8}px`);
+    particles.appendChild(dot);
+    animations.push(dot.animate([
+      {transform:'translate(-50%,-50%) scale(.2)',opacity:0},
+      {transform:'translate(-50%,-50%) scale(1.5)',opacity:1,offset:.16},
+      {transform:`translate(calc(-50% + ${tx}px),calc(-50% + ${ty}px)) scale(1)`,opacity:.9,offset:.76},
+      {transform:`translate(calc(-50% + ${tx}px),calc(-50% + ${ty}px)) scale(.15)`,opacity:0}
+    ],{duration:1250+Math.random()*280,delay:Math.random()*160,easing:'cubic-bezier(.2,.7,.2,1)',fill:'forwards'}).finished);
+  }
+  flying.animate([{opacity:1,transform:`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(.72)`},{opacity:0,transform:`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(2.4)`}],{duration:360,easing:'ease-out',fill:'forwards'});
+  await wait(470);
+  message.classList.add('is-visible');
+  tone(520,.32,.018);
+  await Promise.allSettled(animations);
+  flying.remove();particles.remove();
+  document.body.classList.remove('finale-sequence');
+  document.body.classList.add('finale-complete');
+  await wait(1500);
 }
 (()=>{
   const c=document.querySelector('#space'),x=c.getContext('2d');let w,h,dpr,stars=[],shoot=null;
