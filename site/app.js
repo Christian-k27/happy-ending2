@@ -254,7 +254,7 @@ async function winnerFinal(returning=false){
   a.className='corner-link';
   a.textContent=state.winnerLinkText||"Can't find me? ↗";
   a.href=state.winnerUrl||cfg.instagramUrl||'#';
-  a.target='_blank';
+  a.target='_self';
   a.rel='noopener';
   document.body.appendChild(a);
 }
