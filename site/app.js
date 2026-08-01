@@ -269,7 +269,7 @@ function q8(){saveSession('q8');choices('Are you...',[{key:'q8',label:'Female',r
 function q9(){
   saveSession('q9');
   state.currentQuestion='Would you describe yourself as...';
-  setScreen(`<h2 class="question">Would you describe yourself as...</h2><div class="choices" id="choices"></div><button type="button" class="secret-choice" id="secret-choice">Let's gooo</button>`);
+  setScreen(`<h2 class="question">Would you describe yourself as...</h2><div class="choices" id="choices"></div><button type="button" class="secret-choice" id="secret-choice">Let's fuuuck</button>`);
   screen.classList.add('q9-screen');
   const wrap=document.querySelector('#choices');
   [
@@ -300,7 +300,7 @@ function q9(){
     [...wrap.children].forEach(x=>x.disabled=true);
     e.currentTarget.disabled=true;
     e.currentTarget.classList.add('selected');
-    state.answers.q9="Let's gooo";
+    state.answers.q9="Let's fuuuck";
     await wait(260);
     secretVictory();
   });
@@ -319,9 +319,9 @@ function q11(){
   saveSession('q11');
   choices('How would you end up the job?',[ 
     {key:'q11',label:'Leave it unfinished',next:troublemakerEnding},
-    {key:'q11',label:'In my office',next:letsDoItEnding},
-    {key:'q11',label:'At home',next:letsDoItEnding},
-    {key:'q11',label:'Homeless',next:letsDoItEnding}
+    {key:'q11',label:'Wherever on me',next:letsDoItEnding},
+    {key:'q11',label:'In my mouth',next:letsDoItEnding},
+    {key:'q11',label:'Inside me',next:letsDoItEnding}
   ]);
 }
 function q12(){saveSession('q12');choices('If someone attractive asked you to spend a day together...',[{key:'q12',label:'Yeah!',reaction:'I like confidence.',icon:'✨',next:q13},{key:'q12',label:"I'd think about it",reaction:'Playing it safe?',icon:'◌',next:q14},{key:'q12',label:'No chance',gameOver:true}])}
@@ -355,7 +355,7 @@ async function letsDoItEnding(){
 
 async function secretVictory(){
   document.body.classList.remove('game-over');
-  await completeGame('winner','lets_gooo',null);
+  await completeGame('winner','lets_fuuuck',null);
   document.querySelectorAll('.win-glow').forEach(x=>x.remove());
   const glow=document.createElement('div');glow.className='win-glow';document.body.appendChild(glow);
   scene(['Well...','I like your honesty.','You skipped the rules.','Your Happy Ending is waiting for you...'],winnerFinal,{icon:'✦',pause:[1800,2200,2500,3000]});
