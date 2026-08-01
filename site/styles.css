@@ -36,6 +36,12 @@ button,input{font:inherit}
 .choice:hover::after,.choice:focus-visible::after{opacity:1;transform:translate(0,-50%)}
 .choice.selected{border-color:rgba(180,188,255,.68);background:linear-gradient(135deg,rgba(150,161,255,.2),rgba(205,139,255,.11));box-shadow:0 0 0 1px rgba(170,181,255,.08),0 18px 60px rgba(74,82,180,.18)}
 .choice:disabled{cursor:default}
+
+.q9-screen{justify-content:flex-start;padding-top:clamp(72px,12vh,128px)}
+.secret-choice{align-self:flex-start;margin-top:clamp(54px,12vh,118px);padding:10px 4px;border:0;background:transparent;color:var(--fg);font:800 clamp(20px,3vw,28px)/1.1 inherit;letter-spacing:-.025em;cursor:pointer;opacity:.9;transition:.2s var(--ease)}
+.secret-choice:hover,.secret-choice:focus-visible{opacity:1;transform:translateY(-2px);outline:none;text-shadow:0 0 24px rgba(210,190,255,.35)}
+.secret-choice.selected{opacity:1;transform:scale(1.03)}
+.secret-choice:disabled{cursor:default}
 .primary{border:1px solid rgba(255,255,255,.5);border-radius:999px;padding:16px 30px;background:linear-gradient(135deg,#fff,#e9ebff);color:#080a12;font-weight:700;letter-spacing:.07em;cursor:pointer;box-shadow:0 20px 70px rgba(0,0,0,.42),0 0 45px rgba(199,203,255,.12);transition:.22s var(--ease)}
 .primary:hover{transform:translateY(-2px) scale(1.012)}
 .field{width:min(100%,470px);background:rgba(255,255,255,.045);color:var(--fg);border:1px solid rgba(255,255,255,.17);border-radius:19px;padding:17px 19px;font-size:clamp(25px,5vw,46px);letter-spacing:-.04em;outline:none;transition:.22s var(--ease)}
