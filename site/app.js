@@ -90,7 +90,7 @@ function continueScreen(){
   const saved=loadSession();
   setScreen(`<button class="primary" id="resume">CONTINUE</button>`,'center');
   document.querySelector('#resume').onclick=()=>{
-    const routes={q1,nameScreen,q3,q4,q5,q6,q7,q8,q9,q10,q12,q13,q14,q15};
+    const routes={q1,nameScreen,q3,q4,q5,q6,q7,q8,q9,q10,q11,q12,q13,q14,q15};
     const next=routes[saved?.resumeAt]||q1;
     transition(next,true);
   };
@@ -305,7 +305,25 @@ function q9(){
     secretVictory();
   });
 }
-function q10(){saveSession('q10');choices('Which job would you choose to do?',[{key:'q10',label:'Nurse',gameOver:true},{key:'q10',label:'Teacher',gameOver:true},{key:'q10',label:'Trashman',gameOver:true},{key:'q10',label:'Handjob',reaction:'Good choice.',icon:'✦',next:q12},{key:'q10',label:'Blowjob',reaction:'Good choice.',icon:'✦',next:q12}])}
+function q10(){
+  saveSession('q10');
+  choices('Which job would you choose to do?',[ 
+    {key:'q10',label:'Nurse',reaction:'Good choice.',icon:'✦',next:q12},
+    {key:'q10',label:'Teacher',reaction:'Good choice.',icon:'✦',next:q12},
+    {key:'q10',label:'Trashman',reaction:'Good choice.',icon:'✦',next:q12},
+    {key:'q10',label:'Handjob',reaction:'Interesting choice.',icon:'✦',next:q11},
+    {key:'q10',label:'Blowjob',reaction:'Interesting choice.',icon:'✦',next:q11}
+  ]);
+}
+function q11(){
+  saveSession('q11');
+  choices('How would you end up the job?',[ 
+    {key:'q11',label:'Leave it unfinished',next:troublemakerEnding},
+    {key:'q11',label:'In my office',next:letsDoItEnding},
+    {key:'q11',label:'At home',next:letsDoItEnding},
+    {key:'q11',label:'Homeless',next:letsDoItEnding}
+  ]);
+}
 function q12(){saveSession('q12');choices('If someone attractive asked you to spend a day together...',[{key:'q12',label:'Yeah!',reaction:'I like confidence.',icon:'✨',next:q13},{key:'q12',label:"I'd think about it",reaction:'Playing it safe?',icon:'◌',next:q14},{key:'q12',label:'No chance',gameOver:true}])}
 function q13(){saveSession('q13');choices('What are you looking for?',[{key:'q13',label:'Fun',reaction:"I was hoping you'd say that.",icon:'🔥',next:q15},{key:'q13',label:'Sex',reaction:"I knew you'd say that.",icon:'😏',next:victory},{key:'q13',label:'Drinking',gameOver:true},{key:'q13',label:'Money',gameOver:true}])}
 function q15(){saveSession('q15');choices('Sooo...',[{key:'q15',label:"Let's have some fun together",reaction:"I knew you'd say that.",icon:'🔥',next:victory},{key:'q15',label:"Nah, I'm a scaredy-cat",gameOver:true}])}
@@ -317,6 +335,22 @@ async function gameOver(losingQuestion=state.currentQuestion){
   navigator.vibrate?.([80,35,120]);tone(90,.24,.055);
   const f=document.createElement('div');f.className='flash';document.body.appendChild(f);setTimeout(()=>f.remove(),420);
   await wait(180); setScreen(`<div class="icon">☠️</div><h1 class="title">GAME OVER</h1><p class="subtitle">Not today...</p><p class="subtitle">Your Happy Ending is waiting somewhere else.</p>`,'center');
+}
+
+async function troublemakerEnding(){
+  document.body.classList.remove('game-over');
+  await completeGame('winner','troublemaker',null);
+  document.querySelectorAll('.win-glow').forEach(x=>x.remove());
+  const glow=document.createElement('div');glow.className='win-glow';document.body.appendChild(glow);
+  scene(['We have here a troublemaker...','If you are brave enough...','Come for me.'],winnerFinal,{icon:'✦',pause:[2200,2200,2500]});
+}
+
+async function letsDoItEnding(){
+  document.body.classList.remove('game-over');
+  await completeGame('winner','lets_do_it',null);
+  document.querySelectorAll('.win-glow').forEach(x=>x.remove());
+  const glow=document.createElement('div');glow.className='win-glow';document.body.appendChild(glow);
+  scene(["Let's do it...",'The Happy Ending is waiting...','Come for me.'],winnerFinal,{icon:'✦',pause:[2100,2400,2500]});
 }
 
 async function secretVictory(){
