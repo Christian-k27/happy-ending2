@@ -195,7 +195,7 @@ function nameScreen(){
   const go=()=>{const v=input.value.trim();if(!v){input.focus();input.animate([{transform:'translateX(0)'},{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'translateX(0)'}],{duration:240});return}state.name=v.slice(0,14);scene([`Nice to meet you, ${state.name}.`],q3,{icon:'✨',pause:1050})};
   btn.onclick=go;input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();go()}});input.focus();
 }
-function q3(){choices("What'll you choose?",[{key:'q3',label:'Go home',gameOver:true},{key:'q3',label:'Go to sleep',gameOver:true},{key:'q3',label:'Keep thinking about missed chances',gameOver:true},{key:'q3',label:'Make the best memories',reaction:'Good start.',icon:'🔥',next:q4},{key:'q3',label:'Do whatever the fuck you want',reaction:'Good start.',icon:'🔥',next:q4}])}
+function q3(){choices("What'll you choose?",[{key:'q3',label:'Go home',gameOver:true},{key:'q3',label:'Go to sleep',gameOver:true},{key:'q3',label:'Keep thinking about missed chances',gameOver:true},{key:'q3',label:'Make the best memories',reaction:'Good start.',icon:'🔥',next:q4},{key:'q3',label:'Do whatever the fuck I want',reaction:'Good start.',icon:'🔥',next:q4}])}
 function q4(){choices('When was the last time you did something spontaneous?',[{key:'q4',label:'This week',reaction:'Still alive.',icon:'✨',next:q5},{key:'q4',label:'This month',reaction:'Still alive.',icon:'✨',next:q5},{key:'q4',label:"I can't remember, but I'd like to change it",reaction:'Still alive.',icon:'✨',next:q5},{key:'q4',label:"I don't like it",gameOver:true}])}
 function q5(){choices('How many years have you survived so far?',[{key:'q5',label:'Under 15',gameOver:true},{key:'q5',label:'15–17',reaction:'Interesting...',icon:'🪐',next:q6},{key:'q5',label:'18–24',reaction:'Interesting...',icon:'🪐',next:q6},{key:'q5',label:'25–34',reaction:'Interesting...',icon:'🪐',next:q6},{key:'q5',label:'35+',reaction:'Interesting...',icon:'🪐',next:q6}],{subtitle:'Yeah... I mean your age.'})}
 function q6(){choices('How tall are you?',[{key:'height',label:'Over 185 cm',next:()=>setHeight('over185')},{key:'height',label:'170–184 cm',next:()=>setHeight('170-184')},{key:'height',label:'155–169 cm',next:()=>setHeight('155-169')},{key:'height',label:'Under 154 cm',next:()=>setHeight('under154')}])}
@@ -205,8 +205,45 @@ function q7(){
   choices('How much did chicken nuggets affect you?',[{key:'weight',label:`Over ${n} kg`,gameOver:true},{key:'weight',label:`Under ${n} kg`,reaction:'Looking good.',icon:'✨',next:q8}],{subtitle:"Your weight... we won't tell anyone."});
 }
 function q8(){choices('Are you...',[{key:'q8',label:'Female',reaction:'Perfect.',icon:'💫',next:q9},{key:'q8',label:'Male',gameOver:true},{key:'q8',label:'Other',gameOver:true}],{eyebrow:'Something easy'})}
-function q9(){choices('Would you describe yourself as...',[{key:'q9',label:'Good girl',reaction:"We'll see.",icon:'😈',next:q10},{key:'q9',label:'Bad girl',reaction:'I had a feeling.',icon:'😏',next:q10}])}
-function q10(){choices('About who are you spinning around?',[{key:'q10',label:'Heterosexual',reaction:'Good to know.',next:q12},{key:'q10',label:'Bisexual',reaction:'Good to know.',next:q12},{key:'q10',label:'Homosexual',gameOver:true},{key:'q10',label:'Other',gameOver:true},{key:'q10',label:"Let's fuuuck.",next:secretVictory}],{subtitle:'Your orientation.'})}
+function q9(){
+  state.currentQuestion='Would you describe yourself as...';
+  setScreen(`<h2 class="question">Would you describe yourself as...</h2><div class="choices" id="choices"></div><button type="button" class="secret-choice" id="secret-choice">Let's fuuuck</button>`);
+  screen.classList.add('q9-screen');
+  const wrap=document.querySelector('#choices');
+  [
+    {label:'Good girl',reaction:"We'll see.",icon:'😈'},
+    {label:'Bad girl',reaction:'I had a feeling.',icon:'😏'}
+  ].forEach((o,i)=>{
+    const b=document.createElement('button');
+    b.type='button';
+    b.className='choice';
+    b.textContent=`${String.fromCharCode(65+i)}) ${o.label}`;
+    b.addEventListener('click',async()=>{
+      if(locked)return;
+      locked=true;
+      tone(620,.06,.018);
+      [...wrap.children].forEach(x=>x.disabled=true);
+      document.querySelector('#secret-choice').disabled=true;
+      b.classList.add('selected');
+      state.answers.q9=o.label;
+      await wait(270);
+      reaction(o.reaction,q10,o.icon);
+    });
+    wrap.appendChild(b);
+  });
+  document.querySelector('#secret-choice').addEventListener('click',async e=>{
+    if(locked)return;
+    locked=true;
+    tone(720,.08,.022);
+    [...wrap.children].forEach(x=>x.disabled=true);
+    e.currentTarget.disabled=true;
+    e.currentTarget.classList.add('selected');
+    state.answers.q9="Let's fuuuck";
+    await wait(260);
+    secretVictory();
+  });
+}
+function q10(){choices('Which job would you choose to do?',[{key:'q10',label:'Nurse',gameOver:true},{key:'q10',label:'Teacher',gameOver:true},{key:'q10',label:'Trashman',gameOver:true},{key:'q10',label:'Handjob',reaction:'Good choice.',icon:'✦',next:q12},{key:'q10',label:'Blowjob',reaction:'Good choice.',icon:'✦',next:q12}])}
 function q12(){choices('If someone attractive asked you to spend a day together...',[{key:'q12',label:'Yeah!',reaction:'I like confidence.',icon:'✨',next:q13},{key:'q12',label:"I'd think about it",reaction:'Playing it safe?',icon:'◌',next:q14},{key:'q12',label:'No chance',gameOver:true}])}
 function q13(){choices('What are you looking for?',[{key:'q13',label:'Fun',reaction:"I was hoping you'd say that.",icon:'🔥',next:q15},{key:'q13',label:'Sex',reaction:"I knew you'd say that.",icon:'😏',next:victory},{key:'q13',label:'Drinking',gameOver:true},{key:'q13',label:'Money',gameOver:true}])}
 function q15(){choices('Sooo...',[{key:'q15',label:"Let's have some fun together",reaction:"I knew you'd say that.",icon:'🔥',next:victory},{key:'q15',label:"Nah, I'm a scaredy-cat",gameOver:true}])}
