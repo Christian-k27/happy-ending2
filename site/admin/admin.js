@@ -95,9 +95,19 @@ $('#download-qr').onclick=()=>{
 };
 
 const QUESTION_LABELS={
-  q1:'Belong here?',q3:"What'll you choose?",q4:'Good girl or bad girl?',q5:'A little dangerous?',
-  height:'Height',weight:'Weight',q8:'Dance floor',q9:'Attention',q10:'Orientation',q12:'Day together',
-  q13:'First move',q14:'Risk level',q15:'Final choice'
+  q1:'Are you sure you belong here?',
+  q3:"What'll you choose?",
+  q4:'When was the last time you did something spontaneous?',
+  q5:'How many years have you survived so far?',
+  height:'How tall are you?',
+  weight:'How much did chicken nuggets affect you?',
+  q8:'Are you...?',
+  q9:'Would you describe yourself as...?',
+  q10:'About who are you spinning around?',
+  q12:'If someone attractive asked you to spend a day together...',
+  q13:'What are you looking for?',
+  q14:'Sooo...',
+  q15:'Sooo...'
 };
 function formatDuration(seconds){
   if(seconds==null||!Number.isFinite(Number(seconds)))return '—';
@@ -156,33 +166,93 @@ function renderAnalytics(players){
   }).join(''):'<p class="muted">No answer data yet.</p>';
 }
 
-async function loadPlayers(){
-  const {data,error}=await supabase.from('players').select('id,token,status,player_name,started_at,completed_at,created_at,attempts(result,winning_path,losing_question,duration_seconds,answers,created_at)').order('created_at',{ascending:false});
-  if(error){console.error(error);return}
-  // Ignore legacy pre-generated QR tokens. Shared-QR browser identities are long hexadecimal values.
-  const players=(data||[]).filter(p=>SHARED_TOKEN_PATTERN.test(p.token||''));
-  renderAnalytics(players);
-  const counts={all:players.length,playing:0,winner:0,loser:0};
-  players.forEach(p=>{if(counts[p.status]!==undefined)counts[p.status]++});
-  $('#stats').innerHTML=[['Total players',counts.all],['In progress',counts.playing],['Winners',counts.winner],['Losers',counts.loser]].map(([l,n])=>`<div class="stat"><span class="muted">${l}</span><strong>${n}</strong></div>`).join('');
-  $('#players').innerHTML=players.map(p=>{
-    const attempt=Array.isArray(p.attempts)?p.attempts[0]:p.attempts;
+let allPlayers=[];
+let playerSearch='';
+let expandedPlayerId=null;
+
+function getLatestAttempt(player){
+  const attempts=Array.isArray(player.attempts)?player.attempts:(player.attempts?[player.attempts]:[]);
+  return attempts.slice().sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0))[0]||null;
+}
+function answerEntries(attempt){
+  const answers=attempt?.answers;
+  if(!answers||typeof answers!=='object'||Array.isArray(answers))return [];
+  return Object.entries(answers).filter(([,value])=>value!=null&&String(value).trim()!=='');
+}
+function resultLabel(player,attempt){
+  const result=attempt?.result||player.status;
+  if(result==='winner')return '<span class="journey-result winner">🏆 Happy Ending</span>';
+  if(result==='loser')return '<span class="journey-result loser">✕ Game Over</span>';
+  return '<span class="journey-result playing">Game in progress</span>';
+}
+function renderAnswerJourney(player,attempt){
+  const entries=answerEntries(attempt);
+  const answers=entries.length?entries.map(([key,value],index)=>`<li class="journey-step"><span class="journey-number">${index+1}</span><div><div class="journey-question">${escapeHtml(QUESTION_LABELS[key]||key)}</div><div class="journey-answer"><span aria-hidden="true">→</span> ${escapeHtml(value)}</div></div></li>`).join(''):'<li class="journey-empty">No answers were saved for this game.</li>';
+  return `<div class="journey-card"><div class="journey-heading"><div><strong>${escapeHtml(player.player_name||'Unnamed player')}</strong><div class="tiny">${formatDate(attempt?.created_at||player.started_at||player.created_at)}${attempt?.duration_seconds!=null?` · ${formatDuration(attempt.duration_seconds)}`:''}</div></div>${resultLabel(player,attempt)}</div><ol class="journey-list">${answers}</ol></div>`;
+}
+function filteredPlayers(){
+  const term=playerSearch.trim().toLocaleLowerCase();
+  if(!term)return allPlayers;
+  return allPlayers.filter(player=>(player.player_name||'').toLocaleLowerCase().includes(term));
+}
+function renderPlayersTable(){
+  const players=filteredPlayers();
+  const summary=$('#player-search-summary');
+  if(summary)summary.textContent=playerSearch?`${players.length} of ${allPlayers.length} player${allPlayers.length===1?'':'s'} shown`:`${allPlayers.length} player${allPlayers.length===1?'':'s'}`;
+  const tbody=$('#players');
+  tbody.innerHTML=players.map(p=>{
+    const attempt=getLatestAttempt(p);
     const detail=attempt?.winning_path||attempt?.losing_question||'—';
-    return `<tr><td><span class="badge ${p.status}">${escapeHtml(p.status)}</span></td><td>${escapeHtml(p.player_name||'—')}</td><td>${formatDate(p.started_at||p.created_at)}</td><td>${formatDate(p.completed_at)}</td><td>${escapeHtml(detail)}${attempt?.duration_seconds!=null?`<div class="tiny">${attempt.duration_seconds}s</div>`:''}</td><td><span title="${escapeHtml(p.token)}">${escapeHtml(shortBrowserId(p.token))}</span></td><td><button class="secondary reset" data-id="${p.id}" data-name="${escapeHtml(p.player_name||shortBrowserId(p.token)||'this player')}">Reset player</button></td></tr>`;
-  }).join('')||'<tr><td colspan="7">No shared-link players yet.</td></tr>';
-  document.querySelectorAll('.reset').forEach(b=>b.onclick=async()=>{
+    const isExpanded=expandedPlayerId===String(p.id);
+    const hasAnswers=answerEntries(attempt).length>0;
+    const row=`<tr class="player-row${isExpanded?' expanded':''}"><td><span class="badge ${p.status}">${escapeHtml(p.status)}</span></td><td>${escapeHtml(p.player_name||'—')}</td><td>${formatDate(p.started_at||p.created_at)}</td><td>${formatDate(p.completed_at)}</td><td>${escapeHtml(detail)}${attempt?.duration_seconds!=null?`<div class="tiny">${formatDuration(attempt.duration_seconds)}</div>`:''}</td><td><span title="${escapeHtml(p.token)}">${escapeHtml(shortBrowserId(p.token))}</span></td><td><button class="secondary details-toggle" type="button" data-id="${p.id}" aria-expanded="${isExpanded}" ${hasAnswers?'':'title="No saved answers for this player"'}>${isExpanded?'Hide':'View'} answers</button></td><td><button class="secondary reset" data-id="${p.id}" data-name="${escapeHtml(p.player_name||shortBrowserId(p.token)||'this player')}">Reset player</button></td></tr>`;
+    const details=isExpanded?`<tr class="player-detail-row"><td colspan="8">${renderAnswerJourney(p,attempt)}</td></tr>`:'';
+    return row+details;
+  }).join('')||`<tr><td colspan="8">${playerSearch?'No players match this name.':'No shared-link players yet.'}</td></tr>`;
+
+  tbody.querySelectorAll('.details-toggle').forEach(button=>button.onclick=()=>{
+    const id=String(button.dataset.id);
+    expandedPlayerId=expandedPlayerId===id?null:id;
+    renderPlayersTable();
+  });
+  tbody.querySelectorAll('.reset').forEach(b=>b.onclick=async()=>{
     const playerName=b.dataset.name||'this player';
     if(!confirm(`Reset ${playerName}? They will be able to play again on the same browser.`))return;
     b.disabled=true;
     const {error}=await supabase.rpc('reset_player',{p_player_id:b.dataset.id});
-    if(error){
-      alert(error.message);
-      b.disabled=false;
-      return;
-    }
+    if(error){alert(error.message);b.disabled=false;return}
+    expandedPlayerId=null;
     await loadPlayers();
   });
 }
+
+async function loadPlayers(){
+  const {data,error}=await supabase.from('players').select('id,token,status,player_name,started_at,completed_at,created_at,attempts(result,winning_path,losing_question,duration_seconds,answers,created_at)').order('created_at',{ascending:false});
+  if(error){console.error(error);return}
+  // Ignore legacy pre-generated QR tokens. Shared-QR browser identities are long hexadecimal values.
+  allPlayers=(data||[]).filter(p=>SHARED_TOKEN_PATTERN.test(p.token||''));
+  renderAnalytics(allPlayers);
+  const counts={all:allPlayers.length,playing:0,winner:0,loser:0};
+  allPlayers.forEach(p=>{if(counts[p.status]!==undefined)counts[p.status]++});
+  $('#stats').innerHTML=[['Total players',counts.all],['In progress',counts.playing],['Winners',counts.winner],['Losers',counts.loser]].map(([l,n])=>`<div class="stat"><span class="muted">${l}</span><strong>${n}</strong></div>`).join('');
+  renderPlayersTable();
+}
+
+const playerSearchInput=$('#player-search');
+const clearPlayerSearch=$('#clear-player-search');
+playerSearchInput?.addEventListener('input',()=>{
+  playerSearch=playerSearchInput.value;
+  clearPlayerSearch?.classList.toggle('hidden',!playerSearch);
+  expandedPlayerId=null;
+  renderPlayersTable();
+});
+clearPlayerSearch?.addEventListener('click',()=>{
+  playerSearch='';
+  playerSearchInput.value='';
+  clearPlayerSearch.classList.add('hidden');
+  playerSearchInput.focus();
+  renderPlayersTable();
+});
 
 $('#refresh').onclick=async()=>{const button=$('#refresh');button.disabled=true;await loadPlayers();button.disabled=false};
 
