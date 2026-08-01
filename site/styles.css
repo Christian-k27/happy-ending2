@@ -38,11 +38,13 @@ button,input{font:inherit}
 .choice:disabled{cursor:default}
 
 .q9-screen{justify-content:flex-start;padding-top:clamp(72px,12vh,128px)}
-.secret-choice{align-self:center;margin-top:clamp(32px,7vh,72px);padding:11px 16px 10px;border:0;border-bottom:1px solid rgba(255,255,255,.42);background:transparent;color:var(--fg);font:800 clamp(20px,3vw,28px)/1.1 inherit;letter-spacing:-.025em;cursor:pointer;opacity:.92;transition:.2s var(--ease)}
-.secret-choice::after{content:"↗";display:inline-block;margin-left:9px;font-size:.72em;font-weight:500;opacity:.55;transform:translate(-2px,-1px);transition:.2s var(--ease)}
-.secret-choice:hover,.secret-choice:focus-visible{opacity:1;transform:translateY(-2px);outline:none;border-bottom-color:rgba(255,255,255,.9);text-shadow:0 0 24px rgba(210,190,255,.35)}
-.secret-choice:hover::after,.secret-choice:focus-visible::after{opacity:1;transform:translate(2px,-1px)}
-.secret-choice.selected{opacity:1;transform:scale(1.03)}
+.secret-choice{position:relative;align-self:center;margin-top:clamp(32px,7vh,72px);padding:12px 18px;border:0;background:transparent;color:var(--fg);font:650 clamp(18px,2.7vw,25px)/1.1 inherit;letter-spacing:-.02em;cursor:pointer;opacity:.7;transition:opacity .2s var(--ease),transform .2s var(--ease)}
+.secret-choice::before,.secret-choice::after{content:"";position:absolute;width:10px;height:10px;opacity:.48;transition:opacity .2s var(--ease)}
+.secret-choice::before{left:2px;bottom:2px;border-left:1px solid currentColor;border-bottom:1px solid currentColor}
+.secret-choice::after{right:2px;top:2px;border-top:1px solid currentColor;border-right:1px solid currentColor}
+.secret-choice:hover,.secret-choice:focus-visible{opacity:.9;transform:translateY(-1px);outline:none}
+.secret-choice:hover::before,.secret-choice:hover::after,.secret-choice:focus-visible::before,.secret-choice:focus-visible::after{opacity:.72}
+.secret-choice.selected{opacity:1;transform:scale(1.02)}
 .secret-choice:disabled{cursor:default}
 .primary{border:1px solid rgba(255,255,255,.5);border-radius:999px;padding:16px 30px;background:linear-gradient(135deg,#fff,#e9ebff);color:#080a12;font-weight:700;letter-spacing:.07em;cursor:pointer;box-shadow:0 20px 70px rgba(0,0,0,.42),0 0 45px rgba(199,203,255,.12);transition:.22s var(--ease)}
 .primary:hover{transform:translateY(-2px) scale(1.012)}
