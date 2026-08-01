@@ -49,6 +49,53 @@ function getToken(){
   return token.toLowerCase();
 }
 
+function sessionKey(){
+  return `happy-ending-session:${state.token}`;
+}
+function saveSession(resumeAt){
+  if(!state.token) return;
+  try{
+    localStorage.setItem(sessionKey(), JSON.stringify({
+      resumeAt,
+      name:state.name,
+      heightBand:state.heightBand,
+      answers:state.answers,
+      startedAt:state.startedAt || Date.now()
+    }));
+  }catch(error){
+    console.warn('Session could not be saved',error);
+  }
+}
+function loadSession(){
+  if(!state.token) return null;
+  try{
+    const raw=localStorage.getItem(sessionKey());
+    if(!raw) return null;
+    const saved=JSON.parse(raw);
+    state.name=typeof saved.name==='string'?saved.name:'';
+    state.heightBand=typeof saved.heightBand==='string'?saved.heightBand:'';
+    state.answers=saved.answers&&typeof saved.answers==='object'?saved.answers:{};
+    state.startedAt=Number.isFinite(saved.startedAt)?saved.startedAt:Date.now();
+    return saved;
+  }catch(error){
+    console.warn('Session could not be restored',error);
+    return null;
+  }
+}
+function clearSession(){
+  if(!state.token) return;
+  localStorage.removeItem(sessionKey());
+}
+function continueScreen(){
+  const saved=loadSession();
+  setScreen(`<button class="primary" id="resume">CONTINUE</button>`,'center');
+  document.querySelector('#resume').onclick=()=>{
+    const routes={q1,nameScreen,q3,q4,q5,q6,q7,q8,q9,q10,q12,q13,q14,q15};
+    const next=routes[saved?.resumeAt]||q1;
+    transition(next,true);
+  };
+}
+
 function alreadyLost(){
   document.body.classList.remove('finale');
   document.body.classList.add('game-over');
@@ -69,7 +116,8 @@ async function initializeGame(){
   if(cfg.demoMode && !API_READY){
     const local = localStorage.getItem(`happy-ending:${state.token}`);
     if(local === 'winner') return returningWinner();
-    if(local === 'loser' || local === 'playing') return alreadyLost();
+    if(local === 'loser') return alreadyLost();
+    if(local === 'playing') return continueScreen();
     return intro();
   }
   try{
@@ -81,7 +129,8 @@ async function initializeGame(){
     state.winnerUrl = data.winner_url || cfg.instagramUrl || '#';
     state.winnerLinkText = data.winner_link_text || "Can't find me? ↗";
     if(data.status === 'winner') return returningWinner();
-    if(data.status === 'loser' || data.status === 'playing') return alreadyLost();
+    if(data.status === 'loser') return alreadyLost();
+    if(data.status === 'playing') return continueScreen();
     intro();
   }catch(error){
     console.error(error);
@@ -92,9 +141,16 @@ async function consumePlay(){
   state.startedAt = Date.now();
   if(cfg.demoMode && !API_READY){
     localStorage.setItem(`happy-ending:${state.token}`,'playing');
+    state.name=''; state.heightBand=''; state.answers={};
+    saveSession('q1');
     return 'playing';
   }
-  return rpc('start_game',{p_token:state.token});
+  const result=await rpc('start_game',{p_token:state.token});
+  if(result==='playing'){
+    state.name=''; state.heightBand=''; state.answers={};
+    saveSession('q1');
+  }
+  return result;
 }
 function deviceType(){
   return /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent) ? 'mobile' : 'desktop';
@@ -102,11 +158,12 @@ function deviceType(){
 async function completeGame(result, path=null, losingQuestion=null){
   if(cfg.demoMode && !API_READY){
     localStorage.setItem(`happy-ending:${state.token}`,result);
+    clearSession();
     return result;
   }
   const duration = state.startedAt ? Math.round((Date.now()-state.startedAt)/1000) : null;
   try{
-    return await rpc('finish_game',{
+    const response=await rpc('finish_game',{
       p_token:state.token,
       p_result:result,
       p_player_name:state.name || null,
@@ -117,6 +174,8 @@ async function completeGame(result, path=null, losingQuestion=null){
       p_device_type:deviceType(),
       p_browser_info:navigator.userAgent
     });
+    clearSession();
+    return response;
   }catch(error){
     console.error('Result could not be saved',error);
     return null;
@@ -188,24 +247,27 @@ async function reaction(text,next,icon='✦'){
 }
 function intro(){document.body.classList.remove('game-over','finale');scene(['WAIT.',"This isn't for everyone.",'You might get offended.'],startScreen,{icon:'✦',pause:[1150,1350,1450]})}
 function startScreen(){setScreen(`<div class="icon">✦</div><h1 class="title">Dare to try?</h1><button class="primary" id="start">START</button><div class="footer-note">One chance. One wrong answer → Game Over.</div>`,'center');document.querySelector('#start').onclick=async()=>{if(locked)return;locked=true;const result=await consumePlay();if(result==='playing')transition(q1,true);else if(result==='winner')return returningWinner();else alreadyLost()}}
-function q1(){choices('Are you sure you belong here?',[{key:'q1',label:'Yes',reaction:"Let's see.",next:nameScreen},{key:'q1',label:'I hope so',reaction:"Let's see.",next:nameScreen},{key:'q1',label:"I'm not sure",reaction:"Let's see.",next:nameScreen}])}
+function q1(){saveSession('q1');choices('Are you sure you belong here?',[{key:'q1',label:'Yes',reaction:"Let's see.",next:nameScreen},{key:'q1',label:'I hope so',reaction:"Let's see.",next:nameScreen},{key:'q1',label:"I'm not sure",reaction:"Let's see.",next:nameScreen}])}
 function nameScreen(){
+  saveSession('nameScreen');
   setScreen(`<h2 class="question">How should I call you?</h2><input id="name" class="field" maxlength="14" autocomplete="off" placeholder="Your name"><button id="continue" class="primary">CONTINUE</button>`);
   const input=document.querySelector('#name'),btn=document.querySelector('#continue');
-  const go=()=>{const v=input.value.trim();if(!v){input.focus();input.animate([{transform:'translateX(0)'},{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'translateX(0)'}],{duration:240});return}state.name=v.slice(0,14);scene([`Nice to meet you, ${state.name}.`],q3,{icon:'✨',pause:1050})};
+  const go=()=>{const v=input.value.trim();if(!v){input.focus();input.animate([{transform:'translateX(0)'},{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'translateX(0)'}],{duration:240});return}state.name=v.slice(0,14);saveSession('q3');scene([`Nice to meet you, ${state.name}.`],q3,{icon:'✨',pause:1050})};
   btn.onclick=go;input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();go()}});input.focus();
 }
-function q3(){choices("What'll you choose?",[{key:'q3',label:'Go home',gameOver:true},{key:'q3',label:'Go to sleep',gameOver:true},{key:'q3',label:'Keep thinking about missed chances',gameOver:true},{key:'q3',label:'Make the best memories',reaction:'Good start.',icon:'🔥',next:q4},{key:'q3',label:'Do whatever the fuck I want',reaction:'Good start.',icon:'🔥',next:q4}])}
-function q4(){choices('When was the last time you did something spontaneous?',[{key:'q4',label:'This week',reaction:'Still alive.',icon:'✨',next:q5},{key:'q4',label:'This month',reaction:'Still alive.',icon:'✨',next:q5},{key:'q4',label:"I can't remember, but I'd like to change it",reaction:'Still alive.',icon:'✨',next:q5},{key:'q4',label:"I don't like it",gameOver:true}])}
-function q5(){choices('How many years have you survived so far?',[{key:'q5',label:'Under 15',gameOver:true},{key:'q5',label:'15–17',reaction:'Interesting...',icon:'🪐',next:q6},{key:'q5',label:'18–24',reaction:'Interesting...',icon:'🪐',next:q6},{key:'q5',label:'25–34',reaction:'Interesting...',icon:'🪐',next:q6},{key:'q5',label:'35+',reaction:'Interesting...',icon:'🪐',next:q6}],{subtitle:'Yeah... I mean your age.'})}
-function q6(){choices('How tall are you?',[{key:'height',label:'Over 185 cm',next:()=>setHeight('over185')},{key:'height',label:'170–184 cm',next:()=>setHeight('170-184')},{key:'height',label:'155–169 cm',next:()=>setHeight('155-169')},{key:'height',label:'Under 154 cm',next:()=>setHeight('under154')}])}
-function setHeight(band){state.heightBand=band;reaction('Not bad.',q7,'↕️')}
+function q3(){saveSession('q3');choices("What'll you choose?",[{key:'q3',label:'Go home',gameOver:true},{key:'q3',label:'Go to sleep',gameOver:true},{key:'q3',label:'Keep thinking about missed chances',gameOver:true},{key:'q3',label:'Make the best memories',reaction:'Good start.',icon:'🔥',next:q4},{key:'q3',label:'Do whatever the fuck I want',reaction:'Good start.',icon:'🔥',next:q4}])}
+function q4(){saveSession('q4');choices('When was the last time you did something spontaneous?',[{key:'q4',label:'This week',reaction:'Still alive.',icon:'✨',next:q5},{key:'q4',label:'This month',reaction:'Still alive.',icon:'✨',next:q5},{key:'q4',label:"I can't remember, but I'd like to change it",reaction:'Still alive.',icon:'✨',next:q5},{key:'q4',label:"I don't like it",gameOver:true}])}
+function q5(){saveSession('q5');choices('How many years have you survived so far?',[{key:'q5',label:'Under 15',gameOver:true},{key:'q5',label:'15–17',reaction:'Interesting...',icon:'🪐',next:q6},{key:'q5',label:'18–24',reaction:'Interesting...',icon:'🪐',next:q6},{key:'q5',label:'25–34',reaction:'Interesting...',icon:'🪐',next:q6},{key:'q5',label:'35+',reaction:'Interesting...',icon:'🪐',next:q6}],{subtitle:'Yeah... I mean your age.'})}
+function q6(){saveSession('q6');choices('How tall are you?',[{key:'height',label:'Over 185 cm',next:()=>setHeight('over185')},{key:'height',label:'170–184 cm',next:()=>setHeight('170-184')},{key:'height',label:'155–169 cm',next:()=>setHeight('155-169')},{key:'height',label:'Under 154 cm',next:()=>setHeight('under154')}])}
+function setHeight(band){state.heightBand=band;saveSession('q7');reaction('Not bad.',q7,'↕️')}
 function q7(){
+  saveSession('q7');
   const limits={over185:70,'170-184':60,'155-169':55,under154:50}; const n=limits[state.heightBand];
   choices('How much did chicken nuggets affect you?',[{key:'weight',label:`Over ${n} kg`,gameOver:true},{key:'weight',label:`Under ${n} kg`,reaction:'Looking good.',icon:'✨',next:q8}],{subtitle:"Your weight... we won't tell anyone."});
 }
-function q8(){choices('Are you...',[{key:'q8',label:'Female',reaction:'Perfect.',icon:'💫',next:q9},{key:'q8',label:'Male',gameOver:true},{key:'q8',label:'Other',gameOver:true}],{eyebrow:'Something easy'})}
+function q8(){saveSession('q8');choices('Are you...',[{key:'q8',label:'Female',reaction:'Perfect.',icon:'💫',next:q9},{key:'q8',label:'Male',gameOver:true},{key:'q8',label:'Other',gameOver:true}],{eyebrow:'Something easy'})}
 function q9(){
+  saveSession('q9');
   state.currentQuestion='Would you describe yourself as...';
   setScreen(`<h2 class="question">Would you describe yourself as...</h2><div class="choices" id="choices"></div><button type="button" class="secret-choice" id="secret-choice">Let's fuuuck</button>`);
   screen.classList.add('q9-screen');
@@ -243,11 +305,11 @@ function q9(){
     secretVictory();
   });
 }
-function q10(){choices('Which job would you choose to do?',[{key:'q10',label:'Nurse',gameOver:true},{key:'q10',label:'Teacher',gameOver:true},{key:'q10',label:'Trashman',gameOver:true},{key:'q10',label:'Handjob',reaction:'Good choice.',icon:'✦',next:q12},{key:'q10',label:'Blowjob',reaction:'Good choice.',icon:'✦',next:q12}])}
-function q12(){choices('If someone attractive asked you to spend a day together...',[{key:'q12',label:'Yeah!',reaction:'I like confidence.',icon:'✨',next:q13},{key:'q12',label:"I'd think about it",reaction:'Playing it safe?',icon:'◌',next:q14},{key:'q12',label:'No chance',gameOver:true}])}
-function q13(){choices('What are you looking for?',[{key:'q13',label:'Fun',reaction:"I was hoping you'd say that.",icon:'🔥',next:q15},{key:'q13',label:'Sex',reaction:"I knew you'd say that.",icon:'😏',next:victory},{key:'q13',label:'Drinking',gameOver:true},{key:'q13',label:'Money',gameOver:true}])}
-function q15(){choices('Sooo...',[{key:'q15',label:"Let's have some fun together",reaction:"I knew you'd say that.",icon:'🔥',next:victory},{key:'q15',label:"Nah, I'm a scaredy-cat",gameOver:true}])}
-function q14(){choices('Sooo...',[{key:'q14',label:"Let's let our eyes decide",reaction:"They don't lie.",icon:'👁️',next:victory},{key:'q14',label:"Let's regret not trying",gameOver:true}])}
+function q10(){saveSession('q10');choices('Which job would you choose to do?',[{key:'q10',label:'Nurse',gameOver:true},{key:'q10',label:'Teacher',gameOver:true},{key:'q10',label:'Trashman',gameOver:true},{key:'q10',label:'Handjob',reaction:'Good choice.',icon:'✦',next:q12},{key:'q10',label:'Blowjob',reaction:'Good choice.',icon:'✦',next:q12}])}
+function q12(){saveSession('q12');choices('If someone attractive asked you to spend a day together...',[{key:'q12',label:'Yeah!',reaction:'I like confidence.',icon:'✨',next:q13},{key:'q12',label:"I'd think about it",reaction:'Playing it safe?',icon:'◌',next:q14},{key:'q12',label:'No chance',gameOver:true}])}
+function q13(){saveSession('q13');choices('What are you looking for?',[{key:'q13',label:'Fun',reaction:"I was hoping you'd say that.",icon:'🔥',next:q15},{key:'q13',label:'Sex',reaction:"I knew you'd say that.",icon:'😏',next:victory},{key:'q13',label:'Drinking',gameOver:true},{key:'q13',label:'Money',gameOver:true}])}
+function q15(){saveSession('q15');choices('Sooo...',[{key:'q15',label:"Let's have some fun together",reaction:"I knew you'd say that.",icon:'🔥',next:victory},{key:'q15',label:"Nah, I'm a scaredy-cat",gameOver:true}])}
+function q14(){saveSession('q14');choices('Sooo...',[{key:'q14',label:"Let's let our eyes decide",reaction:"They don't lie.",icon:'👁️',next:victory},{key:'q14',label:"Let's regret not trying",gameOver:true}])}
 async function gameOver(losingQuestion=state.currentQuestion){
   document.body.classList.remove('finale');
   document.body.classList.add('game-over');
