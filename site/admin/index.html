@@ -112,10 +112,22 @@
       </section>
 
       <section class="panel table-panel">
-        <div class="table-head"><div><h2>Players</h2><p class="muted">One row represents one browser that opened the shared QR link.</p></div><button id="refresh" class="secondary">Refresh</button></div>
+        <div class="table-head">
+          <div><h2>Players</h2><p class="muted">Search by name and open a player to see every answer in the order it was given.</p></div>
+          <button id="refresh" class="secondary">Refresh</button>
+        </div>
+        <div class="player-tools">
+          <label class="player-search-label" for="player-search">Search by name</label>
+          <div class="player-search-wrap">
+            <span aria-hidden="true">⌕</span>
+            <input id="player-search" type="search" placeholder="Type a player name…" autocomplete="off">
+            <button id="clear-player-search" class="text-button clear-search hidden" type="button">Clear</button>
+          </div>
+          <p id="player-search-summary" class="tiny player-search-summary"></p>
+        </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Status</th><th>Name</th><th>Started</th><th>Completed</th><th>Path / loss</th><th>Browser ID</th><th></th></tr></thead>
+            <thead><tr><th>Status</th><th>Name</th><th>Started</th><th>Completed</th><th>Path / loss</th><th>Browser ID</th><th>Answers</th><th></th></tr></thead>
             <tbody id="players"></tbody>
           </table>
         </div>
