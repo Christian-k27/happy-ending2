@@ -342,7 +342,7 @@ async function troublemakerEnding(){
   await completeGame('winner','troublemaker',null);
   document.querySelectorAll('.win-glow').forEach(x=>x.remove());
   const glow=document.createElement('div');glow.className='win-glow';document.body.appendChild(glow);
-  scene(['We have here a troublemaker...','If you are brave enough...','Come for me.'],winnerFinal,{icon:'✦',pause:[2200,2200,2500]});
+  scene(['We have here a troublemaker...','If you are brave enough...'],winnerFinal,{icon:'✦',pause:[2200,2500]});
 }
 
 async function letsDoItEnding(){
@@ -350,7 +350,7 @@ async function letsDoItEnding(){
   await completeGame('winner','lets_do_it',null);
   document.querySelectorAll('.win-glow').forEach(x=>x.remove());
   const glow=document.createElement('div');glow.className='win-glow';document.body.appendChild(glow);
-  scene(["Let's do it...",'The Happy Ending is waiting...','Come for me.'],winnerFinal,{icon:'✦',pause:[2100,2400,2500]});
+  scene(["Let's do it...",'The Happy Ending is waiting...'],winnerFinal,{icon:'✦',pause:[2100,2500]});
 }
 
 async function secretVictory(){
