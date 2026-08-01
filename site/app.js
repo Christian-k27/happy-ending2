@@ -269,7 +269,7 @@ function q8(){saveSession('q8');choices('Are you...',[{key:'q8',label:'Female',r
 function q9(){
   saveSession('q9');
   state.currentQuestion='Would you describe yourself as...';
-  setScreen(`<h2 class="question">Would you describe yourself as...</h2><div class="choices" id="choices"></div><button type="button" class="secret-choice" id="secret-choice">Let's fuuuck</button>`);
+  setScreen(`<h2 class="question">Would you describe yourself as...</h2><div class="choices" id="choices"></div><button type="button" class="secret-choice" id="secret-choice">Let's gooo</button>`);
   screen.classList.add('q9-screen');
   const wrap=document.querySelector('#choices');
   [
@@ -300,7 +300,7 @@ function q9(){
     [...wrap.children].forEach(x=>x.disabled=true);
     e.currentTarget.disabled=true;
     e.currentTarget.classList.add('selected');
-    state.answers.q9="Let's fuuuck";
+    state.answers.q9="Let's gooo";
     await wait(260);
     secretVictory();
   });
@@ -355,7 +355,7 @@ async function letsDoItEnding(){
 
 async function secretVictory(){
   document.body.classList.remove('game-over');
-  await completeGame('winner','lets_fuuuck',null);
+  await completeGame('winner','lets_gooo',null);
   document.querySelectorAll('.win-glow').forEach(x=>x.remove());
   const glow=document.createElement('div');glow.className='win-glow';document.body.appendChild(glow);
   scene(['Well...','I like your honesty.','You skipped the rules.','Your Happy Ending is waiting for you...'],winnerFinal,{icon:'✦',pause:[1800,2200,2500,3000]});
