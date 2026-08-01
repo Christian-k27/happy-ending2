@@ -95,3 +95,4 @@ body.star-finale-done .brand-orbit-path,body.star-finale-done .brand-orbit-text{
 @keyframes finaleStarDissolve{0%{opacity:1;transform:translate(-50%,-50%) scale(.82)}100%{opacity:0;transform:translate(-50%,-50%) scale(2.2);filter:blur(5px)}}
 @keyframes finaleWordmarkIn{0%{opacity:0;filter:blur(10px);transform:translateY(7px) scale(.985)}58%{opacity:1;filter:blur(1.5px);transform:translateY(0) scale(1.01)}100%{opacity:1;filter:blur(0);transform:none}}
 @media(prefers-reduced-motion:reduce){.finale-wordmark{opacity:1;filter:none;transform:none}.finale-flight-layer{display:none!important}}
+
